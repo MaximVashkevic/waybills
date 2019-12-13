@@ -34,86 +34,61 @@ static int callback(void* NotUsed, int argc, char** argv, char** azColName) {
 
 int main(void) {
 
-	//sqlite3* db;
-	//char* err_msg = 0;
+	sqlite3* db;
+	char* err_msg = 0;
+	sqlite3_stmt* stmt;
 
-	//int rc = sqlite3_open("test.db", &db);
+	int rc = sqlite3_open("test.db", &db);
 
-	//if (rc != SQLITE_OK) {
-	//	fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
-	//	sqlite3_close(db);
-	//	return 1;
-	//}
+	if (rc != SQLITE_OK) {
+		fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+		sqlite3_close(db);
+		return 1;
+	}
 
-	//char* sql = 
-	//	"BEGIN TRANSACTION;\
-	//	CREATE TABLE Drivers(\
-	//		ID INTEGER PRIMARY KEY NOT NULL,\
-	//		Name TEXT NOT NULL\
-	//	);\
-	//	CREATE TABLE Waybills(\
-	//		ID INTEGER PRIMARY KEY NOT NULL,\
-	//		DriverID INTEGER NOT NULL,\
-	//		Date NUMERIC NOT NULL,\
-	//		Number INTEGER NOT NULL,\
-	//		Car TEXT NOT NULL,\
-	//		FOREIGN KEY(DriverID) REFERENCES Drivers(ID)\
-	//	);\
-	//	CREATE TABLE Accounts(\
-	//		ID INTEGER PRIMARY KEY NOT NULL,\
-	//		Account TEXT NOT NULL\
-	//	);\
-	//	CREATE TABLE Subaccounts(\
-	//		ID INTEGER PRIMARY KEY NOT NULL,\
-	//		AccountID INTEGER NOT NULL,\
-	//		Subaccount TEXT NOT NULL,\
-	//		FOREIGN KEY(AccountID) REFERENCES Accounts(ID)\
-	//	);\
-	//	CREATE TABLE TKM(\
-	//		ID INTEGER PRIMARY KEY NOT NULL,\
-	//		WaybillID INTEGER NOT NULL,\
-	//		SubaccountID INTEGER NOT NULL,\
-	//		Amount INTEGER NOT NULL CHECK(Amount >= 0),\
-	//		FOREIGN KEY(SubaccountID) REFERENCES Subaccounts(ID),\
-	//		FOREIGN KEY(WaybillID) REFERENCES Waybills(ID)\
-	//	);\
-	//	COMMIT;";
+	const char* const sql = "SELECT * FROM drivers WHERE id = ?1;";
+	if (!sqlite3_prepare_v2(db, sql, -1, &stmt, NULL))
+	{
+		sqlite3_bind_int(stmt, 1, 3);
+		while (sqlite3_step(stmt) == SQLITE_ROW)
+		{
+			printf("%i %s\n", sqlite3_column_int(stmt, 0), sqlite3_column_text(stmt, 1));
+		}
+		sqlite3_finalize(stmt);
+
+	}
+	const char* const sql1 = "SELECT * FROM drivers WHERE id = :id;";
+	if (!sqlite3_prepare_v2(db, sql1, -1, &stmt, NULL))
+	{
+		int i = sqlite3_bind_parameter_index(stmt, ":id");
+		sqlite3_bind_int(stmt, i, 3);
+		while (sqlite3_step(stmt) == SQLITE_ROW)
+		{
+			printf("%i %s\n", sqlite3_column_int(stmt, 0), sqlite3_column_text(stmt, 1));
+		}
+		sqlite3_finalize(stmt);
+
+	}
 
 
-	//rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
-
-	//if (rc != SQLITE_OK) {
-
-	//	fprintf(stderr, "SQL error 1: %s\n", err_msg);
-
-	//	sqlite3_free(err_msg);
-	//	sqlite3_exec(db, "ROLLBACK;", 0, 0, &err_msg);
-	//	//sqlite3_close(db);
-	//	
-	//}
-	//sql =
-	//	/*"BEGIN TRANSACTION;\
-	//	INSERT INTO drivers(Name) VALUES ('Bob');\
-	//	INSERT INTO drivers(Name) VALUES('Alice');\
-	//	COMMIT;";*/
-	//	"select * from asd;";
-	//rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
-	//if (rc != SQLITE_OK) {
-
-	//	fprintf(stderr, "SQL error 2: %s\n", err_msg);
-
-	//	sqlite3_free(err_msg);
-	//	sqlite3_close(db);
-
-	//	return 1;
-	//}
-	//else {
-	//	sqlite3_exec(db, "Select * from drivers;", callback, 0, &err_msg);
-	//}
-	//sqlite3_close(db);
-	pconnection pc = createDB("myfile.b");
+	sqlite3_close(db);
+	pconnection pc = createDB("t2.db");
 	if (pc)
 	{
+		addDriver(pc, "Bob");
+		addCar(pc, "8234");
+		addAccount(pc, "12//7");
+		addSubaccount(pc, 1, "молоко");
+		addDriver(pc, "Alice");
+		addCar(pc, "9921");
+		addAccount(pc, "89//7");
+		addSubaccount(pc, 2, "рис");
+		addWaybill(pc, 1, 1221312, 1243, 1);
+		addWaybill(pc, 2, 1231231, 1423, 2);
+
+		addTKM(pc, 1, 1, 10);
+		addTKM(pc, 2, 2, 17);
+
 		closeDB(pc);
 	}
 	return 0;

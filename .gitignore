@@ -1,3 +1,4 @@
 Debug
 *.dbf
 .vs
+*.db
