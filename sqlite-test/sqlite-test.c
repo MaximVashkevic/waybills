@@ -82,8 +82,8 @@ int main(void) {
 		addCar(pc, "9921");
 		addAccount(pc, "89//7");
 		addSubaccount(pc, 2, "рис");
-		addWaybill(pc, 1, 1221312, 1243, 1);
-		addWaybill(pc, 2, 1231231, 1423, 2);
+		addWaybill(pc, 1, "2019-10-11", 1243, 1);
+		addWaybill(pc, 2, "2019-08-31", 1423, 2);
 
 		addTKM(pc, 1, 1, 10);
 		addTKM(pc, 2, 2, 17);

@@ -68,6 +68,7 @@ const char* const AMOUNT_NAME = ":Amount";
 const char* const NAME_NAME = ":Name";
 const char* const ID_NAME = ":ID";
 
+
 pconnection openDB(const char* filename)
 {
 	pconnection pConnection;
@@ -153,7 +154,7 @@ int addCar(pconnection pc, char* number)
 	return result;
 }
 
-int addWaybill(pconnection pc, int driverID, int date, int number, int carID)
+int addWaybill(pconnection pc, int driverID, char * date, int number, int carID)
 {
 	sqlite3_stmt* stmt;
 	int result;
@@ -163,7 +164,7 @@ int addWaybill(pconnection pc, int driverID, int date, int number, int carID)
 		if (!sqlite3_prepare_v2(pc->db, ADD_WAYBILL_QUERY, AUTOLENGTH, &stmt, NULL))
 		{
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, DRIVER_ID_NAME), driverID);
-			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, DATE_NAME), date);
+			sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, DATE_NAME), date, AUTOLENGTH, SQLITE_TRANSIENT);
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, NUMBER_NAME), number);
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, CAR_ID_NAME), carID);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
