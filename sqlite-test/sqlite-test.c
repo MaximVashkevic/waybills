@@ -67,12 +67,11 @@ int main(void) {
 			printf("%i %s\n", sqlite3_column_int(stmt, 0), sqlite3_column_text(stmt, 1));
 		}
 		sqlite3_finalize(stmt);
-
 	}
 
 
 	sqlite3_close(db);
-	pconnection pc = createDB("t2.db");
+	pconnection pc = openDB("t2.db");
 	if (pc)
 	{
 		addDriver(pc, "Bob");
@@ -89,6 +88,11 @@ int main(void) {
 		addTKM(pc, 1, 1, 10);
 		addTKM(pc, 2, 2, 17);
 
+		deleteFromTable(pc, Driver, 1);
+		deleteFromTable(pc, Account, 2);
+		deleteFromTable(pc, Car, 1);
+
+		deleteFromTable(pc, Waybill, 2);
 		closeDB(pc);
 	}
 	return 0;

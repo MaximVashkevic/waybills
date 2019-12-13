@@ -47,6 +47,14 @@ const char* const ADD_WAYBILL_QUERY = "INSERT INTO Waybills(DriverID, Date, Numb
 const char* const ADD_ACCOUNT_QUERY = "INSERT INTO Accounts(Account) VALUES(:Account);";
 const char* const ADD_SUBACCOUNT_QUERY = "INSERT INTO Subaccounts(AccountID, Subaccount) VALUES(:AccountID, :Subaccount);";
 const char* const ADD_TKM_QUERY = "INSERT INTO TKM(WaybillID, SubaccountID, Amount) VALUES(:WaybillID, :SubaccountID, :Amount);";
+
+const char* const DELETE_DRIVER_QUERY = "DELETE FROM Drivers WHERE ID = :ID;";
+const char* const DELETE_CAR_QUERY = "DELETE FROM Cars WHERE ID = :ID;";
+const char* const DELETE_WAYBILL_QUERY = "DELETE FROM Waybills WHERE ID = :ID;";
+const char* const DELETE_ACCOUNT_QUERY = "DELETE FROM Accounts WHERE ID = :ID;";
+const char* const DELETE_SUBACCOUNT_QUERY = "DELETE FROM Subaccounts WHERE ID = :ID;";
+const char* const DELETE_TKM_QUERY = "DELETE FROM TKM WHERE ID = :ID;";
+
 const char* const DRIVER_ID_NAME = ":DriverID";
 const char* const DATE_NAME = ":Date";
 const char* const NUMBER_NAME = ":Number";
@@ -58,6 +66,7 @@ const char* const WAYBILL_ID_NAME = ":WaybillID";
 const char* const SUBACCOUNT_ID_NAME = ":SubaccountID";
 const char* const AMOUNT_NAME = ":Amount";
 const char* const NAME_NAME = ":Name";
+const char* const ID_NAME = ":ID";
 
 pconnection openDB(const char* filename)
 {
@@ -218,7 +227,42 @@ int addTKM(pconnection pc, int waybillID, int subaccountID, int amount)
 	return result;
 }
 
-int deleteDriver(pconnection pc, int id)
+int deleteFromTable(pconnection pc, enum tableType type, int id)
 {
-	return 0;
+	char* sql;
+	sqlite3_stmt* stmt;
+	int result;
+	sql = "";
+	result = 0;
+	if (pc)
+	{
+		switch (type)
+		{
+		case Driver:
+			sql = DELETE_DRIVER_QUERY;
+			break;
+		case Car:
+			sql = DELETE_CAR_QUERY;
+			break;
+		case Waybill:
+			sql = DELETE_WAYBILL_QUERY;
+			break;
+		case TKM:
+			sql = DELETE_TKM_QUERY;
+			break;
+		case Account:
+			sql = DELETE_ACCOUNT_QUERY;
+			break;
+		case Subaccount:
+			sql = DELETE_SUBACCOUNT_QUERY;
+			break;
+		}
+		if (!sqlite3_prepare_v2(pc->db, sql, -1, &stmt, NULL))
+		{ 
+			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, ID_NAME), id);
+			result = sqlite3_step(stmt) == SQLITE_DONE;
+		}
+		sqlite3_finalize(stmt);
+	}
+	return result;
 }

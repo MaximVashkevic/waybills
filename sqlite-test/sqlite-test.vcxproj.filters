@@ -36,7 +36,4 @@
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="myfile.b" />
-  </ItemGroup>
 </Project>
