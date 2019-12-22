@@ -18,9 +18,15 @@
     <ClCompile Include="EntryPoint.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Table.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EntryPoint.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Table.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

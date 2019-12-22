@@ -27,7 +27,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -155,7 +155,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="database.c" />
-    <ClCompile Include="sqlite-test.c" />
+    <ClCompile Include="sqlite-test.c">
+      <FileType>CppCode</FileType>
+    </ClCompile>
     <ClCompile Include="sqlite\sqlite3.c" />
   </ItemGroup>
   <ItemGroup>

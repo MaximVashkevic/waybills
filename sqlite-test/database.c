@@ -57,6 +57,14 @@ const char* const ROLLBACK_QUERY = "ROLLBACK;";
 const char* const GET_DRIVERS_QUERY = "SELECT * FROM Drivers;";
 const char* const COUNT_DRIVERS_QUERY = "SELECT COUNT() FROM Drivers;";
 
+const char* const COUNT_ACCOUNTS_QUERY = "SELECT COUNT() FROM Accounts;";
+const char* const GET_ACCOUNTS_QUERY = "SELECT * FROM Accounts;";
+
+const char* const COUNT_SUBACCOUNTS_QUERY = "SELECT COUNT() FROM Subaccounts WHERE ID = :ID;";
+const char* const GET_SUBACCOUNTS_QUERY = "SELECT * FROM Subaccounts WHERE ID = :ID;";
+
+const char* const COUNT_SUM_BY_ACCOUNT_QUERY = "SELECT COUNT() FROM TKM GROUP BY ";
+
 const char* const DELETE_DRIVER_QUERY = "DELETE FROM Drivers WHERE ID = :ID;";
 const char* const DELETE_CAR_QUERY = "DELETE FROM Cars WHERE ID = :ID;";
 const char* const DELETE_WAYBILL_QUERY = "DELETE FROM Waybills WHERE ID = :ID;";
@@ -257,16 +265,16 @@ int getDrivers(pconnection pc, pdriver* drivers)
 				if (sqlite3_prepare_v2(pc->db, GET_DRIVERS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
 				{
 					i = 0;
-					for  (i = 0; i < count; i++)
+					while (i < count)
 					{
 						if (sqlite3_step(stmtGet) == SQLITE_ROW)
 						{
 							name = sqlite3_column_text16(stmtGet, 1);
-							(*drivers)[i].name = _wcsdup(name);
 							(*drivers)[i].id = sqlite3_column_int(stmtGet, 0);
+							(*drivers)[i].name = _wcsdup(name);
 							wprintf(L"%s\n", name);
 						}
-						//i++;
+						i++;
 					}
 				}
 				sqlite3_finalize(stmtGet);
@@ -286,6 +294,82 @@ void freeDrivers(pdriver drivers, int num)
 		free(drivers[i].name);
 	}
 	free(drivers);
+}
+
+int getAccounts(pconnection pc, paccount* accounts)
+{
+	sqlite3_stmt* stmtCount, * stmtGet;
+	int count;
+	int i;
+	const wchar_t* account;
+
+	count = 0;
+
+	sqlite3_exec(pc->db, BEGIN_TRANSACTION_QUERY, NULL, 0, NULL);
+	if (sqlite3_prepare_v2(pc->db, COUNT_ACCOUNTS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
+	{
+		if (sqlite3_step(stmtCount) == SQLITE_ROW)
+		{
+			count = sqlite3_column_int(stmtCount, 0);
+			*accounts = (paccount)malloc(count * sizeof(account));
+			if (*accounts != NULL) {
+				if (sqlite3_prepare_v2(pc->db, GET_ACCOUNTS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
+				{
+					i = 0;
+					while (i < count)
+					{
+						if (sqlite3_step(stmtGet) == SQLITE_ROW)
+						{
+							account = sqlite3_column_text16(stmtGet, 1);
+							(*accounts)[i].id = sqlite3_column_int(stmtGet, 0);
+							(*accounts)[i].account = _wcsdup(account);
+							wprintf(L"%s\n", account);
+						}
+						i++;
+					}
+				}
+				sqlite3_finalize(stmtGet);
+			}
+		}
+	}
+	sqlite3_finalize(stmtCount);
+	sqlite3_exec(pc->db, COMMIT_QUERY, NULL, 0, NULL);
+	return count;
+}
+
+void freeAccounts(paccount accounts, int num)
+{
+}
+
+int getSubaccounts(pconnection pc, int accountID, psubaccount* subaccounts)
+{
+	return 0;
+}
+
+void freeSubaccounts(psubaccount subaccounts, int num)
+{
+}
+
+
+
+int getSumBySubaccount(pconnection pc, int subaccountID, pdata* data)
+{
+	return 0;
+}
+
+int getSumByAccount(pconnection pc, int accountID, pdata* data)
+{
+	return 0;
+}
+
+int getSumByDriver(pconnection pc, int driverID, pdata* data)
+{
+	return 0;
+}
+
+void freeData(pdata data)
+{
+	free(data);
 }
 
 int deleteFromTable(pconnection pc, enum tableType type, int id)

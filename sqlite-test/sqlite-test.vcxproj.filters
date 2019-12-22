@@ -15,13 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="sqlite-test.c">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="sqlite\sqlite3.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="database.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlite-test.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

@@ -48,6 +48,12 @@ typedef struct _car
 	wchar_t* number;
 } car, *pcar;
 
+typedef struct _data
+{
+	int sum;
+	int id;
+} data, *pdata;
+
 pconnection openDB(const wchar_t* filename);
 pconnection createDB(const wchar_t* filename);
 void closeDB(pconnection pc);
@@ -61,6 +67,19 @@ int addTKM(pconnection pc, int waybillID, int subaccountID, int amount);
 
 int getDrivers(pconnection pc, pdriver* drivers);
 void freeDrivers(pdriver drivers, int num);
+
+int getAccounts(pconnection pc, paccount* accounts);
+void freeAccounts(paccount accounts, int num);
+
+int getSubaccounts(pconnection pc, int accountID, psubaccount* subaccounts);
+void freeSubaccounts(psubaccount subaccounts, int num);
+
+int getSumBySubaccount(pconnection pc, int subaccountID, pdata* data);
+int getSumByAccount(pconnection pc, int accountID, pdata* data);
+int getSumByDriver(pconnection pc, int driverID, pdata* data);
+void freeData(pdata data);
+
+
 
 int deleteFromTable(pconnection pc, enum tableType type, int id);
 
