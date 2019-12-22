@@ -1,6 +1,7 @@
 #include "database.h"
 #include <stdlib.h>
 #include <stdio.h>// temp
+#include <corecrt_wstring.h>
 
 const char* const CREATE_TABLES_QUERY = "BEGIN TRANSACTION;\
 		CREATE TABLE Drivers(\
@@ -48,6 +49,14 @@ const char* const ADD_ACCOUNT_QUERY = "INSERT INTO Accounts(Account) VALUES(:Acc
 const char* const ADD_SUBACCOUNT_QUERY = "INSERT INTO Subaccounts(AccountID, Subaccount) VALUES(:AccountID, :Subaccount);";
 const char* const ADD_TKM_QUERY = "INSERT INTO TKM(WaybillID, SubaccountID, Amount) VALUES(:WaybillID, :SubaccountID, :Amount);";
 
+const char* const BEGIN_TRANSACTION_QUERY = "BEGIN TRANSACTION;";
+const char* const COMMIT_QUERY = "COMMIT;";
+const char* const ROLLBACK_QUERY = "ROLLBACK;";
+
+
+const char* const GET_DRIVERS_QUERY = "SELECT * FROM Drivers;";
+const char* const COUNT_DRIVERS_QUERY = "SELECT COUNT() FROM Drivers;";
+
 const char* const DELETE_DRIVER_QUERY = "DELETE FROM Drivers WHERE ID = :ID;";
 const char* const DELETE_CAR_QUERY = "DELETE FROM Cars WHERE ID = :ID;";
 const char* const DELETE_WAYBILL_QUERY = "DELETE FROM Waybills WHERE ID = :ID;";
@@ -69,7 +78,7 @@ const char* const NAME_NAME = ":Name";
 const char* const ID_NAME = ":ID";
 
 
-pconnection openDB(const char* filename)
+pconnection openDB(const wchar_t* filename)
 {
 	pconnection pConnection;
 	int rc;
@@ -77,7 +86,7 @@ pconnection openDB(const char* filename)
 	pConnection = (pconnection)malloc(sizeof(connection));
 	if (pConnection)
 	{
-		rc = sqlite3_open(filename, &(pConnection->db));
+		rc = sqlite3_open16(filename, &(pConnection->db));
 		if (rc != SQLITE_OK)
 		{
 			sqlite3_close(pConnection->db);
@@ -88,7 +97,7 @@ pconnection openDB(const char* filename)
 	return pConnection;
 }
 
-pconnection createDB(const char* filename)
+pconnection createDB(const wchar_t* filename)
 {
 	pconnection pConnection;
 	int rc;
@@ -96,7 +105,7 @@ pconnection createDB(const char* filename)
 	pConnection = (pconnection)malloc(sizeof(connection));
 	if (pConnection)
 	{
-		rc = sqlite3_open(filename, &(pConnection->db));
+		rc = sqlite3_open16(filename, &(pConnection->db));
 		if (rc != SQLITE_OK)
 		{
 			sqlite3_close(pConnection->db);
@@ -120,16 +129,16 @@ void closeDB(pconnection pc)
 	free(pc);
 }
 
-int addDriver(pconnection pc, char* name)
+int addDriver(pconnection pc, wchar_t* name)
 {
 	sqlite3_stmt* stmt;
 	int result;
 	result = 0;
 	if (pc)
 	{
-		if (!sqlite3_prepare_v2(pc->db, ADD_DRIVER_QUERY, AUTOLENGTH, &stmt, NULL))
+		if (sqlite3_prepare_v2(pc->db, ADD_DRIVER_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
-			sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, NAME_NAME), name, AUTOLENGTH, SQLITE_TRANSIENT);
+			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, NAME_NAME), name, AUTOLENGTH, SQLITE_TRANSIENT);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
 		}
 		sqlite3_finalize(stmt);
@@ -137,16 +146,16 @@ int addDriver(pconnection pc, char* name)
 	return result;
 }
 
-int addCar(pconnection pc, char* number)
+int addCar(pconnection pc, wchar_t* number)
 {
 	sqlite3_stmt* stmt;
 	int result;
 	result = 0;
 	if (pc)
 	{
-		if (!sqlite3_prepare_v2(pc->db, ADD_CAR_QUERY, AUTOLENGTH, &stmt, NULL))
+		if (sqlite3_prepare_v2(pc->db, ADD_CAR_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
-			sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, NUMBER_NAME), number, AUTOLENGTH, SQLITE_TRANSIENT);
+			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, NUMBER_NAME), number, AUTOLENGTH, SQLITE_TRANSIENT);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
 		}
 		sqlite3_finalize(stmt);
@@ -154,17 +163,17 @@ int addCar(pconnection pc, char* number)
 	return result;
 }
 
-int addWaybill(pconnection pc, int driverID, char * date, int number, int carID)
+int addWaybill(pconnection pc, int driverID, wchar_t* date, int number, int carID)
 {
 	sqlite3_stmt* stmt;
 	int result;
 	result = 0;
 	if (pc)
 	{
-		if (!sqlite3_prepare_v2(pc->db, ADD_WAYBILL_QUERY, AUTOLENGTH, &stmt, NULL))
+		if (sqlite3_prepare_v2(pc->db, ADD_WAYBILL_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, DRIVER_ID_NAME), driverID);
-			sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, DATE_NAME), date, AUTOLENGTH, SQLITE_TRANSIENT);
+			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, DATE_NAME), date, AUTOLENGTH, SQLITE_TRANSIENT);
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, NUMBER_NAME), number);
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, CAR_ID_NAME), carID);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
@@ -174,16 +183,16 @@ int addWaybill(pconnection pc, int driverID, char * date, int number, int carID)
 	return result;
 }
 
-int addAccount(pconnection pc, char* account)
+int addAccount(pconnection pc, wchar_t* account)
 {
 	sqlite3_stmt* stmt;
 	int result;
 	result = 0;
 	if (pc)
 	{
-		if (!sqlite3_prepare_v2(pc->db, ADD_ACCOUNT_QUERY, AUTOLENGTH, &stmt, NULL))
+		if (sqlite3_prepare_v2(pc->db, ADD_ACCOUNT_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
-			sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, ACCOUNT_NAME), account, AUTOLENGTH, SQLITE_TRANSIENT);
+			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, ACCOUNT_NAME), account, AUTOLENGTH, SQLITE_TRANSIENT);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
 		}
 		sqlite3_finalize(stmt);
@@ -191,17 +200,17 @@ int addAccount(pconnection pc, char* account)
 	return result;
 }
 
-int addSubaccount(pconnection pc, int accountID, char* subaccount)
+int addSubaccount(pconnection pc, int accountID, wchar_t* subaccount)
 {
 	sqlite3_stmt* stmt;
 	int result;
 	result = 0;
 	if (pc)
 	{
-		if (!sqlite3_prepare_v2(pc->db, ADD_SUBACCOUNT_QUERY, AUTOLENGTH, &stmt, NULL))
+		if (sqlite3_prepare_v2(pc->db, ADD_SUBACCOUNT_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, ACCOUNT_ID_NAME), accountID);
-			sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, SUBACCOUNT_NAME), subaccount, AUTOLENGTH, SQLITE_TRANSIENT);
+			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, SUBACCOUNT_NAME), subaccount, AUTOLENGTH, SQLITE_TRANSIENT);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
 		}
 		sqlite3_finalize(stmt);
@@ -216,7 +225,7 @@ int addTKM(pconnection pc, int waybillID, int subaccountID, int amount)
 	result = 0;
 	if (pc)
 	{
-		if (!sqlite3_prepare_v2(pc->db, ADD_TKM_QUERY, AUTOLENGTH, &stmt, NULL))
+		if (sqlite3_prepare_v2(pc->db, ADD_TKM_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, WAYBILL_ID_NAME), waybillID);
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, SUBACCOUNT_ID_NAME), subaccountID);
@@ -228,9 +237,60 @@ int addTKM(pconnection pc, int waybillID, int subaccountID, int amount)
 	return result;
 }
 
+int getDrivers(pconnection pc, pdriver* drivers)
+{
+	sqlite3_stmt* stmtCount, * stmtGet;
+	int count;
+	int i;
+	const wchar_t* name;
+
+	count = 0;
+
+	sqlite3_exec(pc->db, BEGIN_TRANSACTION_QUERY, NULL, 0, NULL);
+	if (sqlite3_prepare_v2(pc->db, COUNT_DRIVERS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
+	{
+		if (sqlite3_step(stmtCount) == SQLITE_ROW)
+		{
+			count = sqlite3_column_int(stmtCount, 0);
+			*drivers = (pdriver)malloc(count * sizeof(driver));
+			if (*drivers != NULL) {
+				if (sqlite3_prepare_v2(pc->db, GET_DRIVERS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
+				{
+					i = 0;
+					for  (i = 0; i < count; i++)
+					{
+						if (sqlite3_step(stmtGet) == SQLITE_ROW)
+						{
+							name = sqlite3_column_text16(stmtGet, 1);
+							(*drivers)[i].name = _wcsdup(name);
+							(*drivers)[i].id = sqlite3_column_int(stmtGet, 0);
+							wprintf(L"%s\n", name);
+						}
+						//i++;
+					}
+				}
+				sqlite3_finalize(stmtGet);
+			}
+		}
+	}
+	sqlite3_finalize(stmtCount);
+	sqlite3_exec(pc->db, COMMIT_QUERY, NULL, 0, NULL);
+	return count;
+}
+
+void freeDrivers(pdriver drivers, int num)
+{
+	int i;
+	for (i = 0; i < num; i++)
+	{
+		free(drivers[i].name);
+	}
+	free(drivers);
+}
+
 int deleteFromTable(pconnection pc, enum tableType type, int id)
 {
-	char* sql;
+	const char* sql;
 	sqlite3_stmt* stmt;
 	int result;
 	sql = "";
@@ -258,8 +318,8 @@ int deleteFromTable(pconnection pc, enum tableType type, int id)
 			sql = DELETE_SUBACCOUNT_QUERY;
 			break;
 		}
-		if (!sqlite3_prepare_v2(pc->db, sql, -1, &stmt, NULL))
-		{ 
+		if (sqlite3_prepare_v2(pc->db, sql, -1, &stmt, NULL) == SQLITE_OK)
+		{
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, ID_NAME), id);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
 		}

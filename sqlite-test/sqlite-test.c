@@ -71,11 +71,11 @@ int main(void) {
 
 
 	sqlite3_close(db);
-	pconnection pc = openDB("t2.db");
+	pconnection pc = createDB(L"");
 	if (pc)
 	{
-		addDriver(pc, "Bob");
-		addCar(pc, "8234");
+		addDriver(pc, L"Максим");
+		/*addCar(pc, "8234");
 		addAccount(pc, "12//7");
 		addSubaccount(pc, 1, "молоко");
 		addDriver(pc, "Alice");
@@ -90,9 +90,13 @@ int main(void) {
 
 		deleteFromTable(pc, Driver, 1);
 		deleteFromTable(pc, Account, 2);
-		deleteFromTable(pc, Car, 1);
+		deleteFromTable(pc, Car, 1);*/
 
-		deleteFromTable(pc, Waybill, 2);
+		pdriver D = NULL;
+
+		//deleteFromTable(pc, Waybill, 2);
+		int num = getDrivers(pc, &D);
+		freeDrivers(D, num);
 		closeDB(pc);
 	}
 	return 0;

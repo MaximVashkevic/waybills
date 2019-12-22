@@ -2,7 +2,7 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-#include <sqlite3.h>
+#include "sqlite/sqlite3.h"
 
 typedef struct _connection
 {
@@ -14,26 +14,26 @@ enum tableType {Driver, Car, Waybill, Account, Subaccount, TKM};
 typedef struct _driver
 {
 	int id;
-	char* name;
+	wchar_t* name;
 } driver, *pdriver;
 typedef struct _waybill
 {
 	int id;
 	int driverID;
-	char* date;
+	wchar_t* date;
 	int number;
 	int carID;
 } waybill, *pwaybill;
 typedef struct _account
 {
 	int id;
-	char* account;
+	wchar_t* account;
 } account, *paccount;
 typedef struct _subaccount
 {
 	int id;
 	int accountID;
-	char* subaccount;
+	wchar_t* subaccount;
 } subaccount, *psubaccount;
 typedef struct _TKM
 {
@@ -45,19 +45,22 @@ typedef struct _TKM
 typedef struct _car
 {
 	int id;
-	char* number;
+	wchar_t* number;
 } car, *pcar;
 
-pconnection openDB(const char* filename);
-pconnection createDB(const char* filename);
+pconnection openDB(const wchar_t* filename);
+pconnection createDB(const wchar_t* filename);
 void closeDB(pconnection pc);
 
-int addDriver(pconnection pc, char* name);
-int addCar(pconnection pc, char * number);
-int addWaybill(pconnection pc, int driverID, char * date, int number, int carID);
-int addAccount(pconnection pc, char* account);
-int addSubaccount(pconnection pc, int accountID, char* subaccount);
+int addDriver(pconnection pc, wchar_t* name);
+int addCar(pconnection pc, wchar_t* number);
+int addWaybill(pconnection pc, int driverID, wchar_t* date, int number, int carID);
+int addAccount(pconnection pc, wchar_t* account);
+int addSubaccount(pconnection pc, int accountID, wchar_t* subaccount);
 int addTKM(pconnection pc, int waybillID, int subaccountID, int amount);
+
+int getDrivers(pconnection pc, pdriver* drivers);
+void freeDrivers(pdriver drivers, int num);
 
 int deleteFromTable(pconnection pc, enum tableType type, int id);
 
