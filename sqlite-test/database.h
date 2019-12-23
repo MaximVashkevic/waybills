@@ -9,7 +9,7 @@ typedef struct _connection
 	sqlite3* db;
 } TConnection, * PConnection;
 
-enum tableType {tDriver, tCar, tWaybill, tAccount, tSubaccount, tTKM};
+enum tableType {tDriver, tCar, tWaybill, tAccount, tTKM};
 
 typedef struct _driver
 {
@@ -40,12 +40,6 @@ typedef struct _accounts
 	PAccount data;
 	int count;
 } TAccounts, * PAccounts;
-typedef struct _subaccount
-{
-	int id;
-	int accountID;
-	wchar_t* TSubaccount;
-} TSubaccount, *PSubaccount;
 
 typedef struct _TKM
 {
@@ -64,10 +58,15 @@ typedef struct _cars
 	PCar data;
 	int count;
 } TCars, *PCars;
-typedef struct _data
+typedef struct _datum
 {
 	int sum;
 	int id;
+} TDatum, *PDatum;
+typedef struct _data
+{
+	PDatum data;
+	int count;
 } TData, *PData;
 
 PConnection openDB(const wchar_t* filename);
@@ -78,7 +77,6 @@ int addDriver(PConnection pc, wchar_t* name);
 int addCar(PConnection pc, wchar_t* number);
 int addWaybill(PConnection pc, int driverID, wchar_t* date, int number, int carID);
 int addAccount(PConnection pc, wchar_t* TAccount);
-int addSubaccount(PConnection pc, int accountID, wchar_t* TSubaccount);
 int addTKM(PConnection pc, int waybillID, int subaccountID, int amount);
 
 PDrivers getDrivers(PConnection pc);
@@ -91,10 +89,7 @@ PCars getCars(PConnection pc);
 void freeCars(PCars cars);
 
 
-
-int getSumBySubaccount(PConnection pc, int subaccountID, PData* data);
-int getSumByAccount(PConnection pc, int accountID, PData* data);
-int getSumByDriver(PConnection pc, int driverID, PData* data);
+PData* getSumByDriver(PConnection pc, int driverID);
 void freeData(PData data);
 
 

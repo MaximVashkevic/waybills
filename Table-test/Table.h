@@ -24,5 +24,6 @@ typedef struct _table
 
 PTable createTable(int rows, int columns, int x, int y);
 void freeTable(PTable TTable);
-wchar_t* getData(PTable TTable, int row, int column, enum type type);
+void* getData(PTable TTable, int row, int column);
+enum type getDataType(PTable TTable, int row, int column);
 void setData(PTable TTable, int row, int column, void * data, enum type type);

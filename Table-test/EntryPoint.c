@@ -98,6 +98,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 					}
 					free(s);
 				}
+				break;
 			}
 			case IDC_BTN_DELETE:
 				if (pSelf->selected)
@@ -366,6 +367,8 @@ void PrintTable(PMainWindow pSelf, HDC hdc, PTable t)
 {
 	int x, y;
 	size_t* pcch = malloc(sizeof(size_t));
+	LPWSTR s = NULL;
+	int* num;
 	if (t)
 	{
 		x = t->x;
@@ -377,14 +380,31 @@ void PrintTable(PMainWindow pSelf, HDC hdc, PTable t)
 				SaveDC(hdc);
 				SetBkColor(hdc, BACK_COLOR);
 			}
-			StringCchLength(getData(t, i, 0, tText), 30, pcch);
+			switch (getDataType(t, i, 0))
+			{
+			case tText:
+				s = (LPWSTR)getData(t, i, 0);
+				break;
+			case tInt:
+				s = malloc(STRBUF_MAX_SIZE);
+				if (s)
+				{
+					num = (int*)(getData(t, i, 0));
+					wsprintf("%i", s, *num);
+				}
+			}
+			StringCchLength(s, STRBUF_MAX_SIZE, pcch);
 			if (pcch)
 			{
-				TextOut(hdc, x, y, getData(t, i, 0, tText), *pcch);
+				TextOut(hdc, x, y, s, *pcch);
 			}
 			if (pSelf->selected && (i == pSelf->selection.i))
 			{
 				RestoreDC(hdc, -1);
+			}
+			if (getDataType(t, i, 0) == tInt && s)
+			{
+				free(s);
 			}
 			y += t->rowHeight;
 		}
@@ -412,6 +432,9 @@ void Paint(HWND hWnd)
 		break;
 	case sCars: 
 		PrintTable(pSelf, hdc, pSelf->tCars);
+		break;
+	case sReport:
+		PrintTable(pSelf, hdc, pSelf->drivers);
 	}
 	EndPaint(hWnd, &ps);
 }

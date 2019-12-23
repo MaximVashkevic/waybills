@@ -38,7 +38,7 @@ const WCHAR* const OK_TEXT = L"OK";
 const WCHAR* const CANCEL_TEXT = L"Отмена";
 
 enum state {
-	sEmpty, sDrivers, sAccounts, sCars, sReport
+	sEmpty, sDrivers, sAccounts, sCars, sReport, sEditing
 };
 typedef struct _tpos
 {

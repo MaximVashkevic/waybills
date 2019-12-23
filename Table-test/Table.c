@@ -31,7 +31,7 @@ PTable createTable(int rows, int columns, int x, int y)
 		{
 			if (t->cells)
 				free(t->cells);
-			if(t)
+			if (t)
 				free(t);
 			t = NULL;
 		}
@@ -59,18 +59,12 @@ void setData(PTable TTable, int row, int column, void* data, enum type type)
 		TTable->cells[row * (TTable->colCount) + column].data = data;
 	}
 }
-wchar_t* getData(PTable TTable, int row, int column)
+void* getData(PTable TTable, int row, int column)
 {
-	wchar_t* temp;
-	switch (TTable->cells[row * (TTable->colCount) + column].type)
-	{
-	case tInt:
-		//temp = malloc(MAX_BUF_SIZE * sizeof(wchar_t));
-		
+	return TTable->cells[row * (TTable->colCount) + column].data;
+}
 
-
-
-	case tText:
-		return (wchar_t*)TTable->cells[row * (TTable->colCount) + column].data;
-	}
+enum type getDataType(PTable TTable, int row, int column)
+{
+	return TTable->cells[row * (TTable->colCount) + column].type;
 }

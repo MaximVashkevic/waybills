@@ -1,7 +1,7 @@
 #include "database.h"
 #include <stdlib.h>
-#include <stdio.h>// temp
 #include <corecrt_wstring.h>
+#include <stdio.h>
 
 const char* const CREATE_TABLES_QUERY = "BEGIN TRANSACTION;\
 		CREATE TABLE Drivers(\
@@ -21,18 +21,12 @@ const char* const CREATE_TABLES_QUERY = "BEGIN TRANSACTION;\
 			ID INTEGER PRIMARY KEY NOT NULL,\
 			Account TEXT NOT NULL\
 		);\
-		CREATE TABLE Subaccounts(\
-			ID INTEGER PRIMARY KEY NOT NULL,\
-			AccountID INTEGER NOT NULL,\
-			Subaccount TEXT NOT NULL,\
-			FOREIGN KEY(AccountID) REFERENCES Accounts(ID)\
-		);\
 		CREATE TABLE TKM(\
 			ID INTEGER PRIMARY KEY NOT NULL,\
 			WaybillID INTEGER NOT NULL,\
-			SubaccountID INTEGER NOT NULL,\
+			AccountID INTEGER NOT NULL,\
 			Amount INTEGER NOT NULL CHECK(Amount >= 0),\
-			FOREIGN KEY(SubaccountID) REFERENCES Subaccounts(ID),\
+			FOREIGN KEY(AccountID) REFERENCES Accounts(ID),\
 			FOREIGN KEY(WaybillID) REFERENCES Waybills(ID)\
 		);\
 		CREATE TABLE Cars(\
@@ -46,13 +40,11 @@ const char* const ADD_DRIVER_QUERY = "INSERT INTO Drivers(Name) VALUES(:Name);";
 const char* const ADD_CAR_QUERY = "INSERT INTO Cars(Number) VALUES(:Number);";
 const char* const ADD_WAYBILL_QUERY = "INSERT INTO Waybills(DriverID, Date, Number, CarID) VALUES(:DriverID, :Date, :Number, :CarID);";
 const char* const ADD_ACCOUNT_QUERY = "INSERT INTO Accounts(Account) VALUES(:Account);";
-const char* const ADD_SUBACCOUNT_QUERY = "INSERT INTO Subaccounts(AccountID, Subaccount) VALUES(:AccountID, :Subaccount);";
 const char* const ADD_TKM_QUERY = "INSERT INTO TKM(WaybillID, SubaccountID, Amount) VALUES(:WaybillID, :SubaccountID, :Amount);";
 
 const char* const BEGIN_TRANSACTION_QUERY = "BEGIN TRANSACTION;";
 const char* const COMMIT_QUERY = "COMMIT;";
 const char* const ROLLBACK_QUERY = "ROLLBACK;";
-
 
 const char* const GET_DRIVERS_QUERY = "SELECT * FROM Drivers;";
 const char* const COUNT_DRIVERS_QUERY = "SELECT COUNT() FROM Drivers;";
@@ -63,13 +55,12 @@ const char* const GET_ACCOUNTS_QUERY = "SELECT * FROM Accounts;";
 const char* const COUNT_CARS_QUERY = "SELECT COUNT() FROM Cars;";
 const char* const GET_CARS_QUERY = "SELECT * FROM Cars;";
 
-const char* const COUNT_SUM_BY_ACCOUNT_QUERY = "SELECT COUNT() FROM TKM GROUP BY ";
+const char* const GET_SUM_BY_DRIVER_QUERY = "SELECT TKM.AccountID, SUM(TKM.Amount) from TKM INNER JOIN Waybills ON Waybills.ID = TKM.WaybillID WHERE Waybills.DriverID = :DriverID GROUP BY TKM.AccountID;";
 
 const char* const DELETE_DRIVER_QUERY = "DELETE FROM Drivers WHERE ID = :ID;";
 const char* const DELETE_CAR_QUERY = "DELETE FROM Cars WHERE ID = :ID;";
 const char* const DELETE_WAYBILL_QUERY = "DELETE FROM Waybills WHERE ID = :ID;";
 const char* const DELETE_ACCOUNT_QUERY = "DELETE FROM Accounts WHERE ID = :ID;";
-const char* const DELETE_SUBACCOUNT_QUERY = "DELETE FROM Subaccounts WHERE ID = :ID;";
 const char* const DELETE_TKM_QUERY = "DELETE FROM TKM WHERE ID = :ID;";
 
 const char* const DRIVER_ID_NAME = ":DriverID";
@@ -200,24 +191,6 @@ int addAccount(PConnection pc, wchar_t* TAccount)
 		if (sqlite3_prepare_v2(pc->db, ADD_ACCOUNT_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
 			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, ACCOUNT_NAME), TAccount, AUTOLENGTH, SQLITE_TRANSIENT);
-			result = sqlite3_step(stmt) == SQLITE_DONE;
-		}
-		sqlite3_finalize(stmt);
-	}
-	return result;
-}
-
-int addSubaccount(PConnection pc, int accountID, wchar_t* TSubaccount)
-{
-	sqlite3_stmt* stmt;
-	int result;
-	result = 0;
-	if (pc)
-	{
-		if (sqlite3_prepare_v2(pc->db, ADD_SUBACCOUNT_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
-		{
-			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, ACCOUNT_ID_NAME), accountID);
-			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, SUBACCOUNT_NAME), TSubaccount, AUTOLENGTH, SQLITE_TRANSIENT);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
 		}
 		sqlite3_finalize(stmt);
@@ -443,14 +416,54 @@ void freeAccounts(PAccounts accounts)
 	free(accounts);
 }
 
-int getSumByAccount(PConnection pc, int accountID, PData* data)
+PData* getSumByDriver(PConnection pc, int driverID)
 {
-	return 0;
-}
+	sqlite3_stmt* stmtCount, * stmtGet;
+	int count;
+	int i;
+	const wchar_t* name;
+	PData result;
 
-int getSumByDriver(PConnection pc, int driverID, PData* data)
-{
-	return 0;
+	result = (PData)calloc(1, sizeof(TData));
+	if (result)
+	{
+		count = 0;
+		sqlite3_exec(pc->db, BEGIN_TRANSACTION_QUERY, NULL, 0, NULL);
+		if (sqlite3_prepare_v2(pc->db, COUNT_DRIVERS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
+		{
+			if (sqlite3_step(stmtCount) == SQLITE_ROW)
+			{
+				count = sqlite3_column_int(stmtCount, 0);
+				result->count = count;
+				result->data = (PDatum)calloc(count, sizeof(TDatum));
+
+				if (result->data != NULL) {
+					if (sqlite3_prepare_v2(pc->db, GET_SUM_BY_DRIVER_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
+					{
+						i = 0;
+						while (i < count)
+						{
+							if (sqlite3_step(stmtGet) == SQLITE_ROW)
+							{
+								(result->data)[i].id = sqlite3_column_int(stmtGet, 0);
+								(result->data)[i].sum = sqlite3_column_int(stmtGet, 1);
+							}
+							i++;
+						}
+					}
+					sqlite3_finalize(stmtGet);
+				}
+				else
+				{
+					free(result);
+					result = NULL;
+				}
+			}
+		}
+		sqlite3_finalize(stmtCount);
+		sqlite3_exec(pc->db, COMMIT_QUERY, NULL, 0, NULL);
+	}
+	return result;
 }
 
 void freeData(PData data)
@@ -483,9 +496,6 @@ int deleteFromTable(PConnection pc, enum tableType type, int id)
 			break;
 		case tAccount:
 			sql = DELETE_ACCOUNT_QUERY;
-			break;
-		case tSubaccount:
-			sql = DELETE_SUBACCOUNT_QUERY;
 			break;
 		}
 		if (sqlite3_prepare_v2(pc->db, sql, -1, &stmt, NULL) == SQLITE_OK)
