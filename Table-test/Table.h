@@ -2,7 +2,7 @@
 #include <Windows.h>
 #define COL_WIDTH 100
 #define ROW_HEIGTH 20
-#define MAX_BUF_SIZE 256
+#define MAX_STRBUF_SIZE 256
 enum type {
 	tText, tInt, tFloat
 };

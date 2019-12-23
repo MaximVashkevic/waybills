@@ -53,11 +53,23 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 	case WM_COMMAND:
 		if ((HMENU)LOWORD(wParam) == IDC_BUTTON && HIWORD(wParam) == BN_CLICKED)
 		{
-			/*if (IsWindowEnabled(pSelf->hEdit))
-				EnableWindow(pSelf->hEdit, FALSE);
-			else
-				EnableWindow(pSelf->hEdit, TRUE);*/
-			Disp((HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE), hWnd, L"sdlfkj");
+			LPWSTR s = (LPWSTR)Disp((HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE), hWnd, L"");
+			if (s)
+			{
+				switch (pSelf->state)
+				{
+				case sAccounts:
+					addAccount(pSelf->pc, s);
+					LoadAccounts(hWnd);
+					break;
+				case sDrivers:
+					addDriver(pSelf->pc, s);
+					LoadDrivers(hWnd);
+					break;
+				}
+				free(s);
+			}
+			break;
 		}
 		switch (LOWORD(wParam))
 		{
@@ -98,6 +110,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		InvalidateRect(pSelf->hWnd, NULL, TRUE);
 		break;
 	case WM_LBUTTONDOWN:
+		switch(pSelf->state)
 		ShowEdit(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pSelf->hEdit);
 		break;
 
@@ -106,7 +119,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
-INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, INT nCmdShow)
+INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, INT nCmdShow)
 {
 	WNDCLASSEX wcex;
 	HWND hMainWindow;
@@ -142,7 +155,7 @@ PWSTR OpenDialog(HWND hWnd)
 	OPENFILENAMEW ofn;
 	PWSTR lpszFile;
 
-	lpszFile = (PWSTR)malloc(FILENAME_BUF_SIZE * sizeof(WCHAR));
+	lpszFile = (PWSTR)malloc(MAX_STRBUF_SIZE * sizeof(WCHAR));
 	if (lpszFile)
 	{
 		lpszFile[0] = '\0';
@@ -151,7 +164,7 @@ PWSTR OpenDialog(HWND hWnd)
 		ofn.lStructSize = sizeof ofn;
 		ofn.hwndOwner = hWnd;
 		ofn.lpstrFile = lpszFile;
-		ofn.nMaxFile = FILENAME_BUF_SIZE;
+		ofn.nMaxFile = MAX_STRBUF_SIZE;
 		ofn.lpstrFilter = STR_FILTER;//last must be terminated by two \0's
 		ofn.nFilterIndex = 1;
 		ofn.lpstrFileTitle = NULL;
@@ -173,7 +186,7 @@ PWSTR SaveDialog(HWND hWnd)
 	OPENFILENAME sfn;
 	PWSTR lpszFile;
 
-	lpszFile = (PWSTR)malloc(FILENAME_BUF_SIZE * sizeof(WCHAR));
+	lpszFile = (PWSTR)malloc(MAX_STRBUF_SIZE * sizeof(WCHAR));
 	if (lpszFile)
 	{
 		lpszFile[0] = '\0';
@@ -182,7 +195,7 @@ PWSTR SaveDialog(HWND hWnd)
 		sfn.lStructSize = sizeof sfn;
 		sfn.hwndOwner = hWnd;
 		sfn.lpstrFile = lpszFile;
-		sfn.nMaxFile = FILENAME_BUF_SIZE;
+		sfn.nMaxFile = MAX_STRBUF_SIZE;
 		sfn.lpstrFilter = STR_FILTER;//last must be terminated by two \0's
 		sfn.nFilterIndex = 1;
 		sfn.lpstrFileTitle = NULL;
@@ -301,8 +314,11 @@ void Paint(HWND hWnd)
 			y = pSelf->tDrivers->y;
 			for (int i = 0; i < pSelf->tDrivers->rowCount; i++)
 			{
-				hr = StringCchLength(getData(pSelf->tDrivers, i, 0, tText), 30, pcch);
-				TextOut(hdc, x, y, getData(pSelf->tDrivers, i, 0, tText), *pcch);
+				StringCchLength(getData(pSelf->tDrivers, i, 0, tText), 30, pcch);
+				if (pcch)
+				{
+					TextOut(hdc, x, y, getData(pSelf->tDrivers, i, 0, tText), *pcch);
+				}
 				y += pSelf->tDrivers->rowHeight;
 			}
 
@@ -315,8 +331,11 @@ void Paint(HWND hWnd)
 			y = pSelf->tAccounts->y;
 			for (int i = 0; i < pSelf->tAccounts->rowCount; i++)
 			{
-				hr = StringCchLength(getData(pSelf->tAccounts, i, 0, tText), 30, pcch);
-				TextOut(hdc, x, y, getData(pSelf->tAccounts, i, 0, tText), *pcch);
+				StringCchLength(getData(pSelf->tAccounts, i, 0, tText), 30, pcch);
+				if (pcch)
+				{
+					TextOut(hdc, x, y, getData(pSelf->tAccounts, i, 0, tText), *pcch);
+				}
 				y += pSelf->tAccounts->rowHeight;
 			}
 		}
@@ -347,7 +366,7 @@ void LoadDrivers(HWND hWnd)
 	}
 }
 
-void LoadAccounts(hWnd)
+void LoadAccounts(HWND hWnd)
 {
 	PMainWindow pSelf;
 	int i;
@@ -383,15 +402,24 @@ LPWORD lpwAlign(LPWORD lpIn)
 
 BOOL DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	LPWSTR result = 0;
 	switch (uMsg)
 	{
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
-		case IDOK:
-
+		case IDOK:			
+			result = malloc(MAX_STRBUF_SIZE * sizeof(wchar_t));
+			if (result)
+			{
+				if (!GetDlgItemText(hwndDlg, ID_TEXT, result, MAX_STRBUF_SIZE))
+				{
+					free(result);
+					result = 0;
+				}
+			}
 		case IDCANCEL:
-			EndDialog(hwndDlg, wParam);
+			EndDialog(hwndDlg, (INT_PTR)result);
 			return TRUE;
 		}
 	}
@@ -414,81 +442,83 @@ LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage)
 		return -1;
 
 	lpdt = (LPDLGTEMPLATE)GlobalLock(hgbl);
+	if (lpdt)
+	{
 
-	// Define a dialog box.
+		// Define a dialog box.
 
-	lpdt->style = WS_POPUP | WS_BORDER | WS_SYSMENU | DS_MODALFRAME | WS_CAPTION;
-	lpdt->cdit = 3;         // Number of controls
-	lpdt->x = DLG_X;  lpdt->y = DLG_Y;
-	lpdt->cx = DLG_CX; lpdt->cy = DLG_CY;
+		lpdt->style = WS_POPUP | WS_BORDER | WS_SYSMENU | DS_MODALFRAME | WS_CAPTION;
+		lpdt->cdit = 3;         // Number of controls
+		lpdt->x = DLG_X;  lpdt->y = DLG_Y;
+		lpdt->cx = DLG_CX; lpdt->cy = DLG_CY;
 
-	lpw = (LPWORD)(lpdt + 1);
-	*lpw++ = 0;             // No menu
-	*lpw++ = 0;             // Predefined dialog box class (by default)
+		lpw = (LPWORD)(lpdt + 1);
+		*lpw++ = 0;             // No menu
+		*lpw++ = 0;             // Predefined dialog box class (by default)
 
-	lpwsz = (LPWSTR)lpw;
-	StringCchCopy(lpwsz, 100, L"Моё окно");
-	StringCchLength(lpwsz, 100, &nchar);
-	lpw += nchar + 1;
+		lpwsz = (LPWSTR)lpw;
+		StringCchCopy(lpwsz, 100, L"Моё окно");
+		StringCchLength(lpwsz, 100, &nchar);
+		lpw += nchar + 1;
 
-	//-----------------------
-	// Define an OK button.
-	//-----------------------
-	lpw = lpwAlign(lpw);    // Align DLGITEMTEMPLATE on DWORD boundary
-	lpdit = (LPDLGITEMTEMPLATE)lpw;
-	lpdit->x = DLG_OK_X; lpdit->y = DLG_BUTTON_Y;
-	lpdit->cx = DLG_BUTTON_CX; lpdit->cy = DLG_BUTTON_CY;
-	lpdit->id = IDOK;       // OK button identifier
-	lpdit->style = WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON;
+		//-----------------------
+		// Define an OK button.
+		//-----------------------
+		lpw = lpwAlign(lpw);    // Align DLGITEMTEMPLATE on DWORD boundary
+		lpdit = (LPDLGITEMTEMPLATE)lpw;
+		lpdit->x = DLG_OK_X; lpdit->y = DLG_BUTTON_Y;
+		lpdit->cx = DLG_BUTTON_CX; lpdit->cy = DLG_BUTTON_CY;
+		lpdit->id = IDOK;       // OK button identifier
+		lpdit->style = WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON;
 
-	lpw = (LPWORD)(lpdit + 1);
-	*lpw++ = 0xFFFF;
-	*lpw++ = 0x0080;        // Button class
+		lpw = (LPWORD)(lpdit + 1);
+		*lpw++ = 0xFFFF;
+		*lpw++ = 0x0080;        // Button class
 
-	lpwsz = (LPWSTR)lpw;
-	nchar = 1 + MultiByteToWideChar(CP_ACP, 0, "OK", -1, lpwsz, 50);
-	lpw += nchar;
-	*lpw++ = 0;             // No creation data
+		lpwsz = (LPWSTR)lpw;
+		nchar = 1 + MultiByteToWideChar(CP_ACP, 0, "OK", -1, lpwsz, 50);
+		lpw += nchar;
+		*lpw++ = 0;             // No creation data
 
-	//-----------------------
-	// Define a cancel button.
-	//-----------------------
-	lpw = lpwAlign(lpw);    // Align DLGITEMTEMPLATE on DWORD boundary
-	lpdit = (LPDLGITEMTEMPLATE)lpw;
-	lpdit->x = DLG_CANCEL_X; lpdit->y = DLG_BUTTON_Y;
-	lpdit->cx = DLG_BUTTON_CX; lpdit->cy = DLG_BUTTON_CY;
-	lpdit->id = IDCANCEL;    // cancel button identifier
-	lpdit->style = WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON;
+		//-----------------------
+		// Define a cancel button.
+		//-----------------------
+		lpw = lpwAlign(lpw);    // Align DLGITEMTEMPLATE on DWORD boundary
+		lpdit = (LPDLGITEMTEMPLATE)lpw;
+		lpdit->x = DLG_CANCEL_X; lpdit->y = DLG_BUTTON_Y;
+		lpdit->cx = DLG_BUTTON_CX; lpdit->cy = DLG_BUTTON_CY;
+		lpdit->id = IDCANCEL;    // cancel button identifier
+		lpdit->style = WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON;
 
-	lpw = (LPWORD)(lpdit + 1);
-	*lpw++ = 0xFFFF;
-	*lpw++ = 0x0080;        // Button class atom
+		lpw = (LPWORD)(lpdit + 1);
+		*lpw++ = 0xFFFF;
+		*lpw++ = 0x0080;        // Button class atom
 
-	lpwsz = (LPWSTR)lpw;
-	StringCchCopy(lpwsz, 100, L"Отмена");
-	StringCchLength(lpwsz, 100, &nchar);
-	lpw += nchar + 2;
-	*lpw++ = 0;             // No creation data
+		lpwsz = (LPWSTR)lpw;
+		StringCchCopy(lpwsz, 100, L"Отмена");
+		StringCchLength(lpwsz, 100, &nchar);
+		lpw += nchar + 2;
+		*lpw++ = 0;             // No creation data
 
 
-	//-----------------------
-	// Define a static text control.
-	//-----------------------
-	lpw = lpwAlign(lpw);    // Align DLGITEMTEMPLATE on DWORD boundary
-	lpdit = (LPDLGITEMTEMPLATE)lpw;
-	lpdit->x = DLG_EDIT_X; lpdit->y = DLG_EDIT_Y;
-	lpdit->cx = DLG_EDIT_CX; lpdit->cy = DLG_EDIT_CY;
-	lpdit->id = ID_TEXT;    // Text identifier
-	lpdit->style = WS_CHILD | WS_VISIBLE | SS_LEFT;
+		//-----------------------
+		// Define a static text control.
+		//-----------------------
+		lpw = lpwAlign(lpw);    // Align DLGITEMTEMPLATE on DWORD boundary
+		lpdit = (LPDLGITEMTEMPLATE)lpw;
+		lpdit->x = DLG_EDIT_X; lpdit->y = DLG_EDIT_Y;
+		lpdit->cx = DLG_EDIT_CX; lpdit->cy = DLG_EDIT_CY;
+		lpdit->id = ID_TEXT;    // Text identifier
+		lpdit->style = WS_CHILD | WS_VISIBLE | SS_LEFT;
 
-	lpw = (LPWORD)(lpdit + 1);
-	*lpw++ = 0xFFFF;
-	*lpw++ = 0x0081;        // Edit class
+		lpw = (LPWORD)(lpdit + 1);
+		*lpw++ = 0xFFFF;
+		*lpw++ = 0x0081;        // Edit class
 
-	for (lpwsz = (LPWSTR)lpw; *lpwsz++ = (WCHAR)*lpszMessage++;);
-	lpw = (LPWORD)lpwsz;
-	*lpw++ = 0;             // No creation data
-
+		for (lpwsz = (LPWSTR)lpw; *lpwsz++ = (WCHAR)*lpszMessage++;);
+		lpw = (LPWORD)lpwsz;
+		*lpw++ = 0;             // No creation data
+	}
 
 	GlobalUnlock(hgbl);
 	ret = DialogBoxIndirect(hInstance,

@@ -304,7 +304,7 @@ void freeDrivers(pdrivers drivers)
 			free((drivers->data)[i].name);
 		}
 		if (drivers->data)
-		free(drivers->data);
+			free(drivers->data);
 	}
 	free(drivers);
 }
@@ -314,7 +314,7 @@ paccounts getAccounts(pconnection pc)
 	sqlite3_stmt* stmtCount, * stmtGet;
 	int count;
 	int i;
-	const wchar_t* account;
+	const wchar_t* name;
 	paccounts result;
 
 	result = (paccounts)calloc(1, sizeof(accounts));
@@ -328,37 +328,30 @@ paccounts getAccounts(pconnection pc)
 			{
 				count = sqlite3_column_int(stmtCount, 0);
 				result->count = count;
-				if (count == 0)
-				{
-					result->data = NULL;
+				result->data = (paccount)calloc(count, sizeof(account));
+
+				if (result->data != NULL) {
+					if (sqlite3_prepare_v2(pc->db, GET_ACCOUNTS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
+					{
+						i = 0;
+						while (i < count)
+						{
+							if (sqlite3_step(stmtGet) == SQLITE_ROW)
+							{
+								name = sqlite3_column_text16(stmtGet, 1);
+								(result->data)[i].id = sqlite3_column_int(stmtGet, 0);
+								(result->data)[i].account = _wcsdup(name);
+								wprintf(L"%s\n", name);
+							}
+							i++;
+						}
+					}
+					sqlite3_finalize(stmtGet);
 				}
 				else
 				{
-					result->data = (paccount)calloc(count, sizeof(account));
-
-					if (result->data != NULL) {
-						if (sqlite3_prepare_v2(pc->db, GET_ACCOUNTS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
-						{
-							i = 0;
-							while (i < count)
-							{
-								if (sqlite3_step(stmtGet) == SQLITE_ROW)
-								{
-									account = sqlite3_column_text16(stmtGet, 1);
-									(result->data)[i].id = sqlite3_column_int(stmtGet, 0);
-									(result->data)[i].account = _wcsdup(account);
-									wprintf(L"%s\n", account);
-								}
-								i++;
-							}
-						}
-						sqlite3_finalize(stmtGet);
-					}
-					else
-					{
-						free(result);
-						result = NULL;
-					}
+					free(result);
+					result = NULL;
 				}
 			}
 		}

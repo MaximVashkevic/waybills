@@ -3,10 +3,10 @@
 #include "../sqlite-test/database.h"
 #include "Table.h"
 
-#define FILENAME_BUF_SIZE 260
+#define MAX_STRBUF_SIZE 260
 #define IDC_BUTTON	(HMENU)100
 #define IDC_EDIT	(HMENU)101
-#define ID_TEXT 200;
+#define ID_TEXT 200
 
 #define DLG_X 10
 #define DLG_Y 10
@@ -42,8 +42,7 @@ typedef struct _TMainWindow
 	pdrivers drivers;
 	paccounts accounts;
 	psubaccounts subaccounts;
-	
-	int driverID;
+	int id;
 	
 } TMainWindow, * PMainWindow;
 
@@ -56,4 +55,5 @@ PWSTR OpenDialog(HWND hWnd);
 PWSTR SaveDialog(HWND hWnd);
 void Paint(HWND hWnd);
 void LoadDrivers(HWND hWnd);
-void LoadAccounts(hWnd);
+void LoadAccounts(HWND hWnd);
+LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
