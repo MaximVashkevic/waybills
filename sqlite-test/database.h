@@ -16,6 +16,12 @@ typedef struct _driver
 	int id;
 	wchar_t* name;
 } driver, *pdriver;
+
+typedef struct _drivers
+{
+	pdriver data;
+	int count;
+}drivers, *pdrivers;
 typedef struct _waybill
 {
 	int id;
@@ -29,12 +35,22 @@ typedef struct _account
 	int id;
 	wchar_t* account;
 } account, *paccount;
+typedef struct _accounts
+{
+	paccount data;
+	int count;
+} accounts, * paccounts;
 typedef struct _subaccount
 {
 	int id;
 	int accountID;
 	wchar_t* subaccount;
 } subaccount, *psubaccount;
+typedef struct _subaccounts
+{
+	psubaccount data;
+	int count;
+} subaccounts, psubaccounts;
 typedef struct _TKM
 {
 	int id;
@@ -65,11 +81,11 @@ int addAccount(pconnection pc, wchar_t* account);
 int addSubaccount(pconnection pc, int accountID, wchar_t* subaccount);
 int addTKM(pconnection pc, int waybillID, int subaccountID, int amount);
 
-int getDrivers(pconnection pc, pdriver* drivers);
-void freeDrivers(pdriver drivers, int num);
+pdrivers getDrivers(pconnection pc);
+void freeDrivers(pdrivers drivers);
 
-int getAccounts(pconnection pc, paccount* accounts);
-void freeAccounts(paccount accounts, int num);
+paccounts getAccounts(pconnection pc);
+void freeAccounts(paccounts accounts);
 
 int getSubaccounts(pconnection pc, int accountID, psubaccount* subaccounts);
 void freeSubaccounts(psubaccount subaccounts, int num);

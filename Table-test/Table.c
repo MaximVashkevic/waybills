@@ -2,44 +2,56 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-ptable createTable(int rows, int columns, ...)
+ptable createTable(int rows, int columns, int x, int y)
 {
 	int i, j;
-	ptable table = (ptable)calloc(1, sizeof(table));
-	if (table)
+	ptable t;
+	t = (ptable)calloc(1, sizeof(table));
+	if (t)
 	{
-		table->rowCount = rows;
-		table->colCount = columns;
-		table->rowHeight = 20;
-		table->cells = (pcell)calloc(rows * columns, sizeof(cell));
-		table->colWidths = (int*)malloc(columns * sizeof(int));
-		if (table->colWidths)
+		t->rowCount = rows;
+		t->colCount = columns;
+		t->x = x;
+		t->y = y;
+		t->rowHeight = ROW_HEIGTH;
+		if (columns * rows > 0)
+			t->cells = (pcell)calloc(rows * columns, sizeof(cell));
+		else
+			t->cells = NULL;
+		if (columns > 0)
+			t->colWidths = (int*)calloc(columns, sizeof(int));
+		else
+			t->cells = NULL;
+		if (t->colWidths)
 		{
-			va_list args;
-			va_start(args, columns);
 			for (i = 0; i < columns; i++)
-			{
-				table->colWidths[i] = va_arg(args, int);
-			}
-			va_end(args);
+				t->colWidths[i] = COL_WIDTH;
 		}
 		else
 		{
-			free(table->cells);
-			free(table);
-			table = NULL;
+			if (t->cells)
+				free(t->cells);
+			if(t)
+				free(t);
+			t = NULL;
 		}
 	}
-	return table;
+	return t;
 }
 
 void freeTable(ptable table)
 {
-	free(table->colWidths);
-	free(table->cells);
+	if (table)
+	{
+		if (table->colWidths)
+			free(table->colWidths);
+		if (table->cells)
+			free(table->cells);
+		free(table);
+	}
 }
 
-void setData(ptable table, int row, int column, void * data, enum type type)
+void setData(ptable table, int row, int column, void* data, enum type type)
 {
 	if (row < table->rowCount && column < table->colCount)
 	{
@@ -49,13 +61,15 @@ void setData(ptable table, int row, int column, void * data, enum type type)
 }
 wchar_t* getData(ptable table, int row, int column)
 {
-	WCHAR temp[255];
+	wchar_t* temp;
 	switch (table->cells[row * (table->colCount) + column].type)
 	{
 	case tInt:
+		//temp = malloc(MAX_BUF_SIZE * sizeof(wchar_t));
 		
 
-				
+
+
 	case tText:
 		return (wchar_t*)table->cells[row * (table->colCount) + column].data;
 	}

@@ -148,17 +148,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Controls.c" />
     <ClCompile Include="EntryPoint.c" />
     <ClCompile Include="Table.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Controls.h" />
     <ClInclude Include="EntryPoint.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Table.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\sqlite-test\sqlite-test.vcxproj">
       <Project>{ab93a320-6189-4b32-8ede-fc5961a23c07}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Table-test.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

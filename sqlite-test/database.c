@@ -91,7 +91,7 @@ pconnection openDB(const wchar_t* filename)
 	pconnection pConnection;
 	int rc;
 
-	pConnection = (pconnection)malloc(sizeof(connection));
+	pConnection = (pconnection)calloc(1, sizeof(connection));
 	if (pConnection)
 	{
 		rc = sqlite3_open16(filename, &(pConnection->db));
@@ -101,7 +101,6 @@ pconnection openDB(const wchar_t* filename)
 			return NULL;
 		}
 	}
-
 	return pConnection;
 }
 
@@ -110,7 +109,7 @@ pconnection createDB(const wchar_t* filename)
 	pconnection pConnection;
 	int rc;
 
-	pConnection = (pconnection)malloc(sizeof(connection));
+	pConnection = (pconnection)calloc(1, sizeof(connection));
 	if (pConnection)
 	{
 		rc = sqlite3_open16(filename, &(pConnection->db));
@@ -245,100 +244,143 @@ int addTKM(pconnection pc, int waybillID, int subaccountID, int amount)
 	return result;
 }
 
-int getDrivers(pconnection pc, pdriver* drivers)
+pdrivers getDrivers(pconnection pc)
 {
 	sqlite3_stmt* stmtCount, * stmtGet;
 	int count;
 	int i;
 	const wchar_t* name;
-
-	count = 0;
-
-	sqlite3_exec(pc->db, BEGIN_TRANSACTION_QUERY, NULL, 0, NULL);
-	if (sqlite3_prepare_v2(pc->db, COUNT_DRIVERS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
+	pdrivers result;
+	result = calloc(1, sizeof(drivers));
+	if (result)
 	{
-		if (sqlite3_step(stmtCount) == SQLITE_ROW)
+		count = 0;
+		sqlite3_exec(pc->db, BEGIN_TRANSACTION_QUERY, NULL, 0, NULL);
+		if (sqlite3_prepare_v2(pc->db, COUNT_DRIVERS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
 		{
-			count = sqlite3_column_int(stmtCount, 0);
-			*drivers = (pdriver)malloc(count * sizeof(driver));
-			if (*drivers != NULL) {
-				if (sqlite3_prepare_v2(pc->db, GET_DRIVERS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
-				{
-					i = 0;
-					while (i < count)
+			if (sqlite3_step(stmtCount) == SQLITE_ROW)
+			{
+				count = sqlite3_column_int(stmtCount, 0);
+				result->count = count;
+				result->data = (pdriver)calloc(count, sizeof(driver));
+				if (result->data != NULL) {
+					if (sqlite3_prepare_v2(pc->db, GET_DRIVERS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
 					{
-						if (sqlite3_step(stmtGet) == SQLITE_ROW)
+						i = 0;
+						while (i < count)
 						{
-							name = sqlite3_column_text16(stmtGet, 1);
-							(*drivers)[i].id = sqlite3_column_int(stmtGet, 0);
-							(*drivers)[i].name = _wcsdup(name);
-							wprintf(L"%s\n", name);
+							if (sqlite3_step(stmtGet) == SQLITE_ROW)
+							{
+								name = sqlite3_column_text16(stmtGet, 1);
+								(result->data)[i].id = sqlite3_column_int(stmtGet, 0);
+								(result->data)[i].name = _wcsdup(name);
+								wprintf(L"%s\n", name);
+							}
+							i++;
 						}
-						i++;
 					}
+					sqlite3_finalize(stmtGet);
 				}
-				sqlite3_finalize(stmtGet);
+				else
+				{
+					free(result);
+					result = NULL;
+				}
 			}
 		}
+		sqlite3_finalize(stmtCount);
+		sqlite3_exec(pc->db, COMMIT_QUERY, NULL, 0, NULL);
 	}
-	sqlite3_finalize(stmtCount);
-	sqlite3_exec(pc->db, COMMIT_QUERY, NULL, 0, NULL);
-	return count;
+	return result;
 }
 
-void freeDrivers(pdriver drivers, int num)
+void freeDrivers(pdrivers drivers)
 {
 	int i;
-	for (i = 0; i < num; i++)
+	if (drivers)
 	{
-		free(drivers[i].name);
+		for (i = 0; i < drivers->count; i++)
+		{
+			free((drivers->data)[i].name);
+		}
+		if (drivers->data)
+		free(drivers->data);
 	}
 	free(drivers);
 }
 
-int getAccounts(pconnection pc, paccount* accounts)
+paccounts getAccounts(pconnection pc)
 {
 	sqlite3_stmt* stmtCount, * stmtGet;
 	int count;
 	int i;
 	const wchar_t* account;
+	paccounts result;
 
-	count = 0;
-
-	sqlite3_exec(pc->db, BEGIN_TRANSACTION_QUERY, NULL, 0, NULL);
-	if (sqlite3_prepare_v2(pc->db, COUNT_ACCOUNTS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
+	result = (paccounts)calloc(1, sizeof(accounts));
+	if (result)
 	{
-		if (sqlite3_step(stmtCount) == SQLITE_ROW)
+		count = 0;
+		sqlite3_exec(pc->db, BEGIN_TRANSACTION_QUERY, NULL, 0, NULL);
+		if (sqlite3_prepare_v2(pc->db, COUNT_ACCOUNTS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
 		{
-			count = sqlite3_column_int(stmtCount, 0);
-			*accounts = (paccount)malloc(count * sizeof(account));
-			if (*accounts != NULL) {
-				if (sqlite3_prepare_v2(pc->db, GET_ACCOUNTS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
+			if (sqlite3_step(stmtCount) == SQLITE_ROW)
+			{
+				count = sqlite3_column_int(stmtCount, 0);
+				result->count = count;
+				if (count == 0)
 				{
-					i = 0;
-					while (i < count)
-					{
-						if (sqlite3_step(stmtGet) == SQLITE_ROW)
+					result->data = NULL;
+				}
+				else
+				{
+					result->data = (paccount)calloc(count, sizeof(account));
+
+					if (result->data != NULL) {
+						if (sqlite3_prepare_v2(pc->db, GET_ACCOUNTS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
 						{
-							account = sqlite3_column_text16(stmtGet, 1);
-							(*accounts)[i].id = sqlite3_column_int(stmtGet, 0);
-							(*accounts)[i].account = _wcsdup(account);
-							wprintf(L"%s\n", account);
+							i = 0;
+							while (i < count)
+							{
+								if (sqlite3_step(stmtGet) == SQLITE_ROW)
+								{
+									account = sqlite3_column_text16(stmtGet, 1);
+									(result->data)[i].id = sqlite3_column_int(stmtGet, 0);
+									(result->data)[i].account = _wcsdup(account);
+									wprintf(L"%s\n", account);
+								}
+								i++;
+							}
 						}
-						i++;
+						sqlite3_finalize(stmtGet);
+					}
+					else
+					{
+						free(result);
+						result = NULL;
 					}
 				}
-				sqlite3_finalize(stmtGet);
 			}
 		}
+		sqlite3_finalize(stmtCount);
+		sqlite3_exec(pc->db, COMMIT_QUERY, NULL, 0, NULL);
 	}
-	sqlite3_finalize(stmtCount);
-	sqlite3_exec(pc->db, COMMIT_QUERY, NULL, 0, NULL);
-	return count;
+	return result;
 }
 
-void freeAccounts(paccount accounts, int num)
+void freeAccounts(paccounts accounts)
 {
+	int i;
+	if (accounts)
+	{
+		for (i = 0; i < accounts->count; i++)
+		{
+			free((accounts->data)[i].account);
+		}
+		if (accounts->data)
+			free(accounts->data);
+	}
+	free(accounts);
 }
 
 int getSubaccounts(pconnection pc, int accountID, psubaccount* subaccounts)
