@@ -71,7 +71,7 @@ int main(void) {
 
 
 	sqlite3_close(db);
-	pconnection pc = createDB(L"");
+	PConnection pc = createDB(L"");
 	if (pc)
 	{
 		addDriver(pc, L"Максим");
@@ -92,7 +92,7 @@ int main(void) {
 		deleteFromTable(pc, Account, 2);
 		deleteFromTable(pc, Car, 1);*/
 
-		pdriver D = NULL;
+		PDriver D = NULL;
 
 		//deleteFromTable(pc, Waybill, 2);
 		int num = getDrivers(pc, &D);

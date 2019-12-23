@@ -10,7 +10,7 @@ typedef struct _cell
 {
 	void* data;
 	enum type type;
-} cell ,*pcell;
+} TCell ,*PCell;
 
 typedef struct _table
 {
@@ -18,11 +18,11 @@ typedef struct _table
 	int colCount;
 	int rowHeight;
 	int* colWidths;
-	pcell cells;
+	PCell cells;
 	int x, y;
-}table, *ptable;
+}TTable, *PTable;
 
-ptable createTable(int rows, int columns, int x, int y);
-void freeTable(ptable table);
-wchar_t* getData(ptable table, int row, int column, enum type type);
-void setData(ptable table, int row, int column, void * data, enum type type);
+PTable createTable(int rows, int columns, int x, int y);
+void freeTable(PTable TTable);
+wchar_t* getData(PTable TTable, int row, int column, enum type type);
+void setData(PTable TTable, int row, int column, void * data, enum type type);

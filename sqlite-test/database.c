@@ -86,12 +86,12 @@ const char* const NAME_NAME = ":Name";
 const char* const ID_NAME = ":ID";
 
 
-pconnection openDB(const wchar_t* filename)
+PConnection openDB(const wchar_t* filename)
 {
-	pconnection pConnection;
+	PConnection pConnection;
 	int rc;
 
-	pConnection = (pconnection)calloc(1, sizeof(connection));
+	pConnection = (PConnection)calloc(1, sizeof(TConnection));
 	if (pConnection)
 	{
 		rc = sqlite3_open16(filename, &(pConnection->db));
@@ -104,12 +104,12 @@ pconnection openDB(const wchar_t* filename)
 	return pConnection;
 }
 
-pconnection createDB(const wchar_t* filename)
+PConnection createDB(const wchar_t* filename)
 {
-	pconnection pConnection;
+	PConnection pConnection;
 	int rc;
 
-	pConnection = (pconnection)calloc(1, sizeof(connection));
+	pConnection = (PConnection)calloc(1, sizeof(TConnection));
 	if (pConnection)
 	{
 		rc = sqlite3_open16(filename, &(pConnection->db));
@@ -130,13 +130,13 @@ pconnection createDB(const wchar_t* filename)
 	return pConnection;
 }
 
-void closeDB(pconnection pc)
+void closeDB(PConnection pc)
 {
 	sqlite3_close(pc->db);
 	free(pc);
 }
 
-int addDriver(pconnection pc, wchar_t* name)
+int addDriver(PConnection pc, wchar_t* name)
 {
 	sqlite3_stmt* stmt;
 	int result;
@@ -153,7 +153,7 @@ int addDriver(pconnection pc, wchar_t* name)
 	return result;
 }
 
-int addCar(pconnection pc, wchar_t* number)
+int addCar(PConnection pc, wchar_t* number)
 {
 	sqlite3_stmt* stmt;
 	int result;
@@ -170,7 +170,7 @@ int addCar(pconnection pc, wchar_t* number)
 	return result;
 }
 
-int addWaybill(pconnection pc, int driverID, wchar_t* date, int number, int carID)
+int addWaybill(PConnection pc, int driverID, wchar_t* date, int number, int carID)
 {
 	sqlite3_stmt* stmt;
 	int result;
@@ -190,7 +190,7 @@ int addWaybill(pconnection pc, int driverID, wchar_t* date, int number, int carI
 	return result;
 }
 
-int addAccount(pconnection pc, wchar_t* account)
+int addAccount(PConnection pc, wchar_t* TAccount)
 {
 	sqlite3_stmt* stmt;
 	int result;
@@ -199,7 +199,7 @@ int addAccount(pconnection pc, wchar_t* account)
 	{
 		if (sqlite3_prepare_v2(pc->db, ADD_ACCOUNT_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
-			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, ACCOUNT_NAME), account, AUTOLENGTH, SQLITE_TRANSIENT);
+			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, ACCOUNT_NAME), TAccount, AUTOLENGTH, SQLITE_TRANSIENT);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
 		}
 		sqlite3_finalize(stmt);
@@ -207,7 +207,7 @@ int addAccount(pconnection pc, wchar_t* account)
 	return result;
 }
 
-int addSubaccount(pconnection pc, int accountID, wchar_t* subaccount)
+int addSubaccount(PConnection pc, int accountID, wchar_t* TSubaccount)
 {
 	sqlite3_stmt* stmt;
 	int result;
@@ -217,7 +217,7 @@ int addSubaccount(pconnection pc, int accountID, wchar_t* subaccount)
 		if (sqlite3_prepare_v2(pc->db, ADD_SUBACCOUNT_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, ACCOUNT_ID_NAME), accountID);
-			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, SUBACCOUNT_NAME), subaccount, AUTOLENGTH, SQLITE_TRANSIENT);
+			sqlite3_bind_text16(stmt, sqlite3_bind_parameter_index(stmt, SUBACCOUNT_NAME), TSubaccount, AUTOLENGTH, SQLITE_TRANSIENT);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
 		}
 		sqlite3_finalize(stmt);
@@ -225,7 +225,7 @@ int addSubaccount(pconnection pc, int accountID, wchar_t* subaccount)
 	return result;
 }
 
-int addTKM(pconnection pc, int waybillID, int subaccountID, int amount)
+int addTKM(PConnection pc, int waybillID, int subaccountID, int amount)
 {
 	sqlite3_stmt* stmt;
 	int result;
@@ -244,14 +244,14 @@ int addTKM(pconnection pc, int waybillID, int subaccountID, int amount)
 	return result;
 }
 
-pdrivers getDrivers(pconnection pc)
+PDrivers getDrivers(PConnection pc)
 {
 	sqlite3_stmt* stmtCount, * stmtGet;
 	int count;
 	int i;
 	const wchar_t* name;
-	pdrivers result;
-	result = calloc(1, sizeof(drivers));
+	PDrivers result;
+	result = calloc(1, sizeof(TDrivers));
 	if (result)
 	{
 		count = 0;
@@ -262,7 +262,7 @@ pdrivers getDrivers(pconnection pc)
 			{
 				count = sqlite3_column_int(stmtCount, 0);
 				result->count = count;
-				result->data = (pdriver)calloc(count, sizeof(driver));
+				result->data = (PDriver)calloc(count, sizeof(TDriver));
 				if (result->data != NULL) {
 					if (sqlite3_prepare_v2(pc->db, GET_DRIVERS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
 					{
@@ -294,30 +294,30 @@ pdrivers getDrivers(pconnection pc)
 	return result;
 }
 
-void freeDrivers(pdrivers drivers)
+void freeDrivers(PDrivers TDrivers)
 {
 	int i;
-	if (drivers)
+	if (TDrivers)
 	{
-		for (i = 0; i < drivers->count; i++)
+		for (i = 0; i < TDrivers->count; i++)
 		{
-			free((drivers->data)[i].name);
+			free((TDrivers->data)[i].name);
 		}
-		if (drivers->data)
-			free(drivers->data);
+		if (TDrivers->data)
+			free(TDrivers->data);
 	}
-	free(drivers);
+	free(TDrivers);
 }
 
-paccounts getAccounts(pconnection pc)
+PAccounts getAccounts(PConnection pc)
 {
 	sqlite3_stmt* stmtCount, * stmtGet;
 	int count;
 	int i;
 	const wchar_t* name;
-	paccounts result;
+	PAccounts result;
 
-	result = (paccounts)calloc(1, sizeof(accounts));
+	result = (PAccounts)calloc(1, sizeof(TAccounts));
 	if (result)
 	{
 		count = 0;
@@ -328,7 +328,7 @@ paccounts getAccounts(pconnection pc)
 			{
 				count = sqlite3_column_int(stmtCount, 0);
 				result->count = count;
-				result->data = (paccount)calloc(count, sizeof(account));
+				result->data = (PAccount)calloc(count, sizeof(TAccount));
 
 				if (result->data != NULL) {
 					if (sqlite3_prepare_v2(pc->db, GET_ACCOUNTS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
@@ -340,7 +340,7 @@ paccounts getAccounts(pconnection pc)
 							{
 								name = sqlite3_column_text16(stmtGet, 1);
 								(result->data)[i].id = sqlite3_column_int(stmtGet, 0);
-								(result->data)[i].account = _wcsdup(name);
+								(result->data)[i].name = _wcsdup(name);
 								wprintf(L"%s\n", name);
 							}
 							i++;
@@ -361,53 +361,53 @@ paccounts getAccounts(pconnection pc)
 	return result;
 }
 
-void freeAccounts(paccounts accounts)
+void freeAccounts(PAccounts TAccounts)
 {
 	int i;
-	if (accounts)
+	if (TAccounts)
 	{
-		for (i = 0; i < accounts->count; i++)
+		for (i = 0; i < TAccounts->count; i++)
 		{
-			free((accounts->data)[i].account);
+			free((TAccounts->data)[i].name);
 		}
-		if (accounts->data)
-			free(accounts->data);
+		if (TAccounts->data)
+			free(TAccounts->data);
 	}
-	free(accounts);
+	free(TAccounts);
 }
 
-int getSubaccounts(pconnection pc, int accountID, psubaccount* subaccounts)
+int getSubaccounts(PConnection pc, int accountID, PSubaccount* TSubaccounts)
 {
 	return 0;
 }
 
-void freeSubaccounts(psubaccount subaccounts, int num)
+void freeSubaccounts(PSubaccount TSubaccounts, int num)
 {
 }
 
 
 
-int getSumBySubaccount(pconnection pc, int subaccountID, pdata* data)
-{
-	return 0;
-}
-
-int getSumByAccount(pconnection pc, int accountID, pdata* data)
+int getSumBySubaccount(PConnection pc, int subaccountID, PData* data)
 {
 	return 0;
 }
 
-int getSumByDriver(pconnection pc, int driverID, pdata* data)
+int getSumByAccount(PConnection pc, int accountID, PData* data)
 {
 	return 0;
 }
 
-void freeData(pdata data)
+int getSumByDriver(PConnection pc, int driverID, PData* data)
+{
+	return 0;
+}
+
+void freeData(PData data)
 {
 	free(data);
 }
 
-int deleteFromTable(pconnection pc, enum tableType type, int id)
+int deleteFromTable(PConnection pc, enum tableType type, int id)
 {
 	const char* sql;
 	sqlite3_stmt* stmt;

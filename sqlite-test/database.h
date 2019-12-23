@@ -7,7 +7,7 @@
 typedef struct _connection
 {
 	sqlite3* db;
-} connection, * pconnection;
+} TConnection, * PConnection;
 
 enum tableType {Driver, Car, Waybill, Account, Subaccount, TKM};
 
@@ -15,13 +15,13 @@ typedef struct _driver
 {
 	int id;
 	wchar_t* name;
-} driver, *pdriver;
+} TDriver, *PDriver;
 
 typedef struct _drivers
 {
-	pdriver data;
+	PDriver data;
 	int count;
-}drivers, *pdrivers;
+}TDrivers, *PDrivers;
 typedef struct _waybill
 {
 	int id;
@@ -29,75 +29,75 @@ typedef struct _waybill
 	wchar_t* date;
 	int number;
 	int carID;
-} waybill, *pwaybill;
+} TWaybill, *PWaybill;
 typedef struct _account
 {
 	int id;
-	wchar_t* account;
-} account, *paccount;
+	wchar_t* name;
+} TAccount, *PAccount;
 typedef struct _accounts
 {
-	paccount data;
+	PAccount data;
 	int count;
-} accounts, * paccounts;
+} TAccounts, * PAccounts;
 typedef struct _subaccount
 {
 	int id;
 	int accountID;
-	wchar_t* subaccount;
-} subaccount, *psubaccount;
+	wchar_t* TSubaccount;
+} TSubaccount, *PSubaccount;
 typedef struct _subaccounts
 {
-	psubaccount data;
+	PSubaccount data;
 	int count;
-} subaccounts, psubaccounts;
+} TSubaccounts, PSubaccounts;
 typedef struct _TKM
 {
 	int id;
 	int waybillID;
 	int subaccountID;
 	int amount;
-} tkm, *ptkm;
+} TTKM, *PTKM;
 typedef struct _car
 {
 	int id;
 	wchar_t* number;
-} car, *pcar;
+} TCar, *PCar;
 
 typedef struct _data
 {
 	int sum;
 	int id;
-} data, *pdata;
+} TData, *PData;
 
-pconnection openDB(const wchar_t* filename);
-pconnection createDB(const wchar_t* filename);
-void closeDB(pconnection pc);
+PConnection openDB(const wchar_t* filename);
+PConnection createDB(const wchar_t* filename);
+void closeDB(PConnection pc);
 
-int addDriver(pconnection pc, wchar_t* name);
-int addCar(pconnection pc, wchar_t* number);
-int addWaybill(pconnection pc, int driverID, wchar_t* date, int number, int carID);
-int addAccount(pconnection pc, wchar_t* account);
-int addSubaccount(pconnection pc, int accountID, wchar_t* subaccount);
-int addTKM(pconnection pc, int waybillID, int subaccountID, int amount);
+int addDriver(PConnection pc, wchar_t* name);
+int addCar(PConnection pc, wchar_t* number);
+int addWaybill(PConnection pc, int driverID, wchar_t* date, int number, int carID);
+int addAccount(PConnection pc, wchar_t* TAccount);
+int addSubaccount(PConnection pc, int accountID, wchar_t* TSubaccount);
+int addTKM(PConnection pc, int waybillID, int subaccountID, int amount);
 
-pdrivers getDrivers(pconnection pc);
-void freeDrivers(pdrivers drivers);
+PDrivers getDrivers(PConnection pc);
+void freeDrivers(PDrivers TDrivers);
 
-paccounts getAccounts(pconnection pc);
-void freeAccounts(paccounts accounts);
+PAccounts getAccounts(PConnection pc);
+void freeAccounts(PAccounts TAccounts);
 
-int getSubaccounts(pconnection pc, int accountID, psubaccount* subaccounts);
-void freeSubaccounts(psubaccount subaccounts, int num);
+int getSubaccounts(PConnection pc, int accountID, PSubaccount* TSubaccounts);
+void freeSubaccounts(PSubaccount TSubaccounts, int num);
 
-int getSumBySubaccount(pconnection pc, int subaccountID, pdata* data);
-int getSumByAccount(pconnection pc, int accountID, pdata* data);
-int getSumByDriver(pconnection pc, int driverID, pdata* data);
-void freeData(pdata data);
+int getSumBySubaccount(PConnection pc, int subaccountID, PData* data);
+int getSumByAccount(PConnection pc, int accountID, PData* data);
+int getSumByDriver(PConnection pc, int driverID, PData* data);
+void freeData(PData data);
 
 
 
-int deleteFromTable(pconnection pc, enum tableType type, int id);
+int deleteFromTable(PConnection pc, enum tableType type, int id);
 
 
 #endif

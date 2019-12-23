@@ -23,8 +23,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		if (pSelf)
 		{
 			pSelf->hWnd = hWnd;
-			pSelf->hBtnAdd = CreateWindowEx(0, L"BUTTON", L"Add", WS_CHILD | BS_PUSHBUTTON,
-				0, 0, 100, 20, hWnd, IDC_BUTTON, 0, NULL);
+			pSelf->hBtnAdd = CreateWindowEx(0, L"BUTTON", L"Добавить", WS_CHILD | BS_PUSHBUTTON,
+				0, 0, 100, 20, hWnd, IDC_BTN_ADD, 0, NULL);
+			pSelf->hBtnDelete = CreateWindowEx(0, L"BUTTON", L"Удалить", WS_CHILD | BS_PUSHBUTTON,
+				0, 0, 100, 20, hWnd, IDC_BTN_ADD, 0, NULL);
+
 			pSelf->hEdit = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | ES_AUTOHSCROLL,
 				120, 0, 150, 40, hWnd, IDC_EDIT, (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE), NULL);
 			pSelf->state = sEmpty;
@@ -51,7 +54,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		Paint(hWnd);
 		break;
 	case WM_COMMAND:
-		if ((HMENU)LOWORD(wParam) == IDC_BUTTON && HIWORD(wParam) == BN_CLICKED)
+		if ((HMENU)LOWORD(wParam) == IDC_BTN_ADD && HIWORD(wParam) == BN_CLICKED)
 		{
 			LPWSTR s = (LPWSTR)Disp((HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE), hWnd, L"");
 			if (s)
@@ -110,13 +113,18 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		InvalidateRect(pSelf->hWnd, NULL, TRUE);
 		break;
 	case WM_LBUTTONDOWN:
-		switch(pSelf->state)
+
+		switch (pSelf->state)
+		{
+		case sDrivers:
+			getID(pSelf->tDrivers, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+
+
+		}
 		ShowEdit(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pSelf->hEdit);
 		break;
 
 	}
-
-
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, INT nCmdShow)
@@ -384,7 +392,7 @@ void LoadAccounts(HWND hWnd)
 
 	for (int i = 0; i < pSelf->accounts->count; i++)
 	{
-		setData(pSelf->tAccounts, i, 0, (pSelf->accounts->data)[i].account, tText);
+		setData(pSelf->tAccounts, i, 0, (pSelf->accounts->data)[i].name, tText);
 	}
 }
 
@@ -408,7 +416,7 @@ BOOL DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
-		case IDOK:			
+		case IDOK:
 			result = malloc(MAX_STRBUF_SIZE * sizeof(wchar_t));
 			if (result)
 			{
@@ -527,4 +535,30 @@ LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage)
 		(DLGPROC)DialogProc);
 	GlobalFree(hgbl);
 	return ret;
+}
+
+TPos getID(PTable t, int x0, int y0)
+{
+	int i, j;
+	int x, y;
+	if (t)
+	{
+		y = t->y;
+		i = (y0 - y) % t->rowHeight;
+		if (i <= t->rowCount)
+		{
+			j = 0;
+			x = t->x;
+			while (x <= x0)
+			{
+				x += t->colWidths[j];
+				j++;
+			}
+			if (j <= t->colCount)
+			{
+				return (TPos) { i, j };
+			}
+		}
+	}
+	return (TPos) { 0, 0 };
 }

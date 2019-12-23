@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-ptable createTable(int rows, int columns, int x, int y)
+PTable createTable(int rows, int columns, int x, int y)
 {
 	int i, j;
-	ptable t;
-	t = (ptable)calloc(1, sizeof(table));
+	PTable t;
+	t = (PTable)calloc(1, sizeof(TTable));
 	if (t)
 	{
 		t->rowCount = rows;
@@ -15,7 +15,7 @@ ptable createTable(int rows, int columns, int x, int y)
 		t->y = y;
 		t->rowHeight = ROW_HEIGTH;
 		if (columns * rows > 0)
-			t->cells = (pcell)calloc(rows * columns, sizeof(cell));
+			t->cells = (PCell)calloc(rows * columns, sizeof(TCell));
 		else
 			t->cells = NULL;
 		if (columns > 0)
@@ -39,30 +39,30 @@ ptable createTable(int rows, int columns, int x, int y)
 	return t;
 }
 
-void freeTable(ptable table)
+void freeTable(PTable TTable)
 {
-	if (table)
+	if (TTable)
 	{
-		if (table->colWidths)
-			free(table->colWidths);
-		if (table->cells)
-			free(table->cells);
-		free(table);
+		if (TTable->colWidths)
+			free(TTable->colWidths);
+		if (TTable->cells)
+			free(TTable->cells);
+		free(TTable);
 	}
 }
 
-void setData(ptable table, int row, int column, void* data, enum type type)
+void setData(PTable TTable, int row, int column, void* data, enum type type)
 {
-	if (row < table->rowCount && column < table->colCount)
+	if (row < TTable->rowCount && column < TTable->colCount)
 	{
-		table->cells[row * (table->colCount) + column].type = type;
-		table->cells[row * (table->colCount) + column].data = data;
+		TTable->cells[row * (TTable->colCount) + column].type = type;
+		TTable->cells[row * (TTable->colCount) + column].data = data;
 	}
 }
-wchar_t* getData(ptable table, int row, int column)
+wchar_t* getData(PTable TTable, int row, int column)
 {
 	wchar_t* temp;
-	switch (table->cells[row * (table->colCount) + column].type)
+	switch (TTable->cells[row * (TTable->colCount) + column].type)
 	{
 	case tInt:
 		//temp = malloc(MAX_BUF_SIZE * sizeof(wchar_t));
@@ -71,6 +71,6 @@ wchar_t* getData(ptable table, int row, int column)
 
 
 	case tText:
-		return (wchar_t*)table->cells[row * (table->colCount) + column].data;
+		return (wchar_t*)TTable->cells[row * (TTable->colCount) + column].data;
 	}
 }

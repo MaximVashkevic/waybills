@@ -4,7 +4,7 @@
 #include "Table.h"
 
 #define MAX_STRBUF_SIZE 260
-#define IDC_BUTTON	(HMENU)100
+#define IDC_BTN_ADD	(HMENU)100
 #define IDC_EDIT	(HMENU)101
 #define ID_TEXT 200
 
@@ -28,6 +28,8 @@
 
 #define DY_TABLE 20
 
+#define INV_POS 0xFFFFFFFF
+
 enum state {
 	sEmpty, sDrivers, sAccounts, sReport
 };
@@ -35,16 +37,23 @@ typedef struct _TMainWindow
 {
 	HWND hWnd;
 	HWND hBtnAdd;
+	HWND hBtnDelete;
 	HWND hEdit;
 	enum state state;
-	pconnection pc;
-	ptable tDrivers, tAccounts, tTkm, tSubaccounts;
-	pdrivers drivers;
-	paccounts accounts;
-	psubaccounts subaccounts;
+	PConnection pc;
+	PTable tDrivers, tAccounts, tTkm, tSubaccounts;
+	PDrivers drivers;
+	PAccounts accounts;
+	PSubaccounts subaccounts;
 	int id;
+	BOOL selected;
 	
 } TMainWindow, * PMainWindow;
+typedef struct _tpos
+{
+	int x;
+	int y;
+} TPos, *PPos;
 
 const WCHAR* const STR_SAVE_TITLE = L"Сохранить как";
 const WCHAR* const STR_OPEN_TITLE = L"Открыть";
@@ -57,3 +66,4 @@ void Paint(HWND hWnd);
 void LoadDrivers(HWND hWnd);
 void LoadAccounts(HWND hWnd);
 LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
+TPos getID(PTable t, int x, int y);
