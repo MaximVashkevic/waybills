@@ -6,7 +6,8 @@
 #define STRBUF_MAX_SIZE 260
 #define IDC_BTN_ADD	(HMENU)100
 #define IDC_BTN_DELETE (HMENU)101
-#define IDC_EDIT	(HMENU)102
+#define IDC_BTN_EDIT	(HMENU)102
+#define IDC_EDIT	(HMENU)103
 #define ID_TEXT 200
 
 #define BACK_COLOR RGB(173, 216, 230)
@@ -50,6 +51,7 @@ typedef struct _TMainWindow
 	HWND hWnd;
 	HWND hBtnAdd;
 	HWND hBtnDelete;
+	HWND hBtnEdit;
 	HWND hEdit;
 	HWND hComboBox;
 	PConnection pc;
@@ -62,6 +64,7 @@ typedef struct _TMainWindow
 	PTable tDrivers, tAccounts, tTkm, tCars, tReport;
 	TPos selection;
 	BOOL selected;	
+	int driverID;
 } TMainWindow, * PMainWindow;
 
 const WCHAR* const STR_SAVE_TITLE = L"Сохранить как";
@@ -72,9 +75,10 @@ void createDatabase(HWND hWnd);
 PWSTR OpenDialog(HWND hWnd);
 PWSTR SaveDialog(HWND hWnd);
 void Paint(HWND hWnd);
-void LoadDrivers(HWND hWnd);
-void LoadAccounts(HWND hWnd);
-void LoadCars(HWND hWnd);
-void LoadReport(HWND hWnd);
+void LoadDrivers(PMainWindow pSelf);
+void LoadAccounts(PMainWindow pSelf);
+void LoadCars(PMainWindow pSelf);
+void LoadReport(PMainWindow pSelf);
+void LoadTKM(PMainWindow pSelf);
 LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
 TPos getID(PTable t, int x, int y);

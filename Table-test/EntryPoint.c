@@ -41,6 +41,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 			//pSelf->hComboBox = CreateWindowEx()
 			pSelf->hEdit = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | ES_AUTOHSCROLL,
 				120, 0, 150, 40, hWnd, IDC_EDIT, (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE), NULL);
+			pSelf->hBtnEdit = CreateWindowEx(0, L"BUTTON", L"Редактировать", WS_CHILD | BS_PUSHBUTTON,
+				210, 0, 150, 20, hWnd, IDC_BTN_EDIT, 0, NULL);
 			pSelf->state = sEmpty;
 			pSelf->pc = NULL;
 			SetWindowLong(hWnd, 0, (LONG)pSelf);
@@ -85,15 +87,15 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 					{
 					case sAccounts:
 						addAccount(pSelf->pc, s);
-						LoadAccounts(hWnd);
+						LoadAccounts(pSelf);
 						break;
 					case sDrivers:
 						addDriver(pSelf->pc, s);
-						LoadDrivers(hWnd);
+						LoadDrivers(pSelf);
 						break;
 					case sCars:
 						addCar(pSelf->pc, s);
-						LoadCars(hWnd);
+						LoadCars(pSelf);
 						break;
 					}
 					free(s);
@@ -107,23 +109,32 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 					{
 					case sAccounts:
 						deleteFromTable(pSelf->pc, tAccount, pSelf->accounts->data[pSelf->selection.i].id);
-						LoadAccounts(hWnd);
+						LoadAccounts(pSelf);
 						pSelf->selected = FALSE;
 						break;
 					case sDrivers:
 						deleteFromTable(pSelf->pc, tDriver, pSelf->drivers->data[pSelf->selection.i].id);
-						LoadDrivers(hWnd);
+						LoadDrivers(pSelf);
 						pSelf->selected = FALSE;
 						break;
 					case sCars:
 						deleteFromTable(pSelf->pc, tCar, pSelf->cars->data[pSelf->selection.i].id);
-						LoadCars(hWnd);
+						LoadCars(pSelf);
 						pSelf->selected = FALSE;
 						break;
 					}
 				}
-				
+				break;
+			case IDC_BTN_EDIT:
+				if (pSelf->selected)
+				{
+					pSelf->selected = FALSE;
+					pSelf->driverID = pSelf->drivers->data[pSelf->selection.i].id;
+					pSelf->state = sEditing;
+					LoadTKM(pSelf);
+				}
 			}
+
 		}
 		switch (LOWORD(wParam))
 		{
@@ -139,12 +150,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				pSelf->selected = FALSE;
 				pSelf->state = sDrivers;
 				if (pSelf->pc)
-					LoadDrivers(hWnd);
+					LoadDrivers(pSelf);
 				if (!IsWindowVisible(pSelf->hBtnAdd))
 				{
 					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
 					ShowWindow(pSelf->hBtnDelete, SW_SHOW);
-
+					ShowWindow(pSelf->hBtnEdit, SW_SHOW);
 				}
 			}
 			break;
@@ -154,7 +165,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				pSelf->selected = FALSE;
 				pSelf->state = sAccounts;
 				if (pSelf->pc)
-					LoadAccounts(hWnd);
+					LoadAccounts(pSelf);
 				if (!IsWindowVisible(pSelf->hBtnAdd))
 				{
 					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
@@ -168,7 +179,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				pSelf->selected = FALSE;
 				pSelf->state = sCars;
 				if (pSelf->pc)
-					LoadCars(hWnd);
+					LoadCars(pSelf);
 				if (!IsWindowVisible(pSelf->hBtnAdd))
 				{
 					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
@@ -182,7 +193,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				pSelf->selected = FALSE;
 				pSelf->state = sReport;
 				if (pSelf->pc)
-					LoadReport(hWnd);
+					LoadReport(pSelf);
 				ShowWindow(pSelf->hBtnAdd, SW_HIDE);
 				ShowWindow(pSelf->hBtnDelete, SW_HIDE);
 			}
@@ -205,7 +216,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 			break;
 		}
 		case sCars:
+		{
 			Select(pSelf, pSelf->tCars, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			break;
+		}
+		case sEditing:
+			Select(pSelf, pSelf->tTkm, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 			break;
 		}
 		InvalidateRect(hWnd, NULL, TRUE);
@@ -309,8 +325,6 @@ PWSTR SaveDialog(HWND hWnd)
 	return lpszFile;
 }
 
-
-
 void PrintError()
 {
 	DWORD dw;
@@ -394,12 +408,12 @@ void PrintTable(PMainWindow pSelf, HDC hdc, PTable t)
 					s = (LPWSTR)getData(t, i, j);
 					break;
 				case tInt:
-					s = malloc(STRBUF_MAX_SIZE*sizeof(WCHAR));
+					s = malloc(STRBUF_MAX_SIZE * sizeof(WCHAR));
 					if (s)
 					{
 						num = (int*)(getData(t, i, j));
 						int n = *num;
-						StringCbPrintf(s,STRBUF_MAX_SIZE, L"%d", n);
+						StringCbPrintf(s, STRBUF_MAX_SIZE, L"%d", n);
 					}
 				}
 				StringCchLength(s, STRBUF_MAX_SIZE, pcch);
@@ -432,15 +446,15 @@ void Paint(HWND hWnd)
 	PMainWindow pSelf = GetWindowLong(hWnd, 0);
 	PAINTSTRUCT ps;
 	hdc = BeginPaint(hWnd, &ps);
-	
+
 	switch (pSelf->state) {
 	case sDrivers:
-		PrintTable(pSelf, hdc, pSelf->tDrivers);		
+		PrintTable(pSelf, hdc, pSelf->tDrivers);
 		break;
 	case sAccounts:
 		PrintTable(pSelf, hdc, pSelf->tAccounts);
 		break;
-	case sCars: 
+	case sCars:
 		PrintTable(pSelf, hdc, pSelf->tCars);
 		break;
 	case sReport:
@@ -449,11 +463,9 @@ void Paint(HWND hWnd)
 	EndPaint(hWnd, &ps);
 }
 
-void LoadDrivers(HWND hWnd)
+void LoadDrivers(PMainWindow pSelf)
 {
-	PMainWindow pSelf;
 	int i;
-	pSelf = (PMainWindow)GetWindowLong(hWnd, 0);
 	if (pSelf->drivers)
 	{
 		freeDrivers(pSelf->drivers);
@@ -471,11 +483,9 @@ void LoadDrivers(HWND hWnd)
 	}
 }
 
-void LoadAccounts(HWND hWnd)
+void LoadAccounts(PMainWindow pSelf)
 {
-	PMainWindow pSelf;
 	int i;
-	pSelf = (PMainWindow)GetWindowLong(hWnd, 0);
 	if (pSelf->accounts)
 	{
 		freeAccounts(pSelf->accounts);
@@ -493,11 +503,9 @@ void LoadAccounts(HWND hWnd)
 	}
 }
 
-void LoadCars(HWND hWnd)
+void LoadCars(PMainWindow pSelf)
 {
-	PMainWindow pSelf;
 	int i;
-	pSelf = (PMainWindow)GetWindowLong(hWnd, 0);
 	if (pSelf->cars)
 	{
 		freeCars(pSelf->cars);
@@ -515,13 +523,11 @@ void LoadCars(HWND hWnd)
 	}
 }
 
-void LoadReport(HWND hWnd)
+void LoadReport(PMainWindow pSelf)
 {
-	PMainWindow pSelf;
 	int i;
-	pSelf = (PMainWindow)GetWindowLong(hWnd, 0);
-	LoadAccounts(hWnd);
-	LoadDrivers(hWnd);
+	LoadAccounts(pSelf);
+	LoadDrivers(pSelf);
 	/*if (pSelf->sums)
 	{
 		freeCars(pSelf->cars);
@@ -552,6 +558,11 @@ void LoadReport(HWND hWnd)
 	{
 		setData(pSelf->tReport, 0, i + 1, (pSelf->accounts->data)[i].name, tText);
 	}
+}
+
+void LoadTKM(PMainWindow pSelf)
+{
+	//pSelf.
 }
 
 LPWORD lpwAlign(LPWORD lpIn)
@@ -590,7 +601,6 @@ BOOL DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	return FALSE;
 }
-
 
 LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage)
 {
