@@ -11,6 +11,17 @@ void ShowEdit(int x, int y, HWND hWnd)
 	SetWindowPos(hWnd, HWND_TOP, x, y, 100, 20, SWP_SHOWWINDOW);
 }
 
+void Select(PMainWindow pSelf, PTable t, int x, int y)
+{
+	TPos pos;
+	pos = getID(t, x, y);
+	if (pos.i != INV_POS)
+	{
+		pSelf->selected = TRUE;
+		pSelf->selection = pos;
+	}
+}
+
 LRESULT CALLBACK WindowProc(HWND hWnd,
 	UINT uMsg,
 	WPARAM wParam,
@@ -156,23 +167,13 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		{
 		case sDrivers:
 		{
-			TPos pos;
-			pos = getID(pSelf->tDrivers, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-			if (pos.i != INV_POS)
-			{
-				pSelf->selected = TRUE;
-				pSelf->selection = pos;
-			}
+			Select(pSelf, pSelf->tDrivers, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			break;
 		}
 		case sAccounts:
 		{
-			TPos pos;
-			pos = getID(pSelf->tAccounts, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-			if (pos.i != INV_POS)
-			{
-				pSelf->selected = TRUE;
-				pSelf->selection = pos;
-			}
+			Select(pSelf, pSelf->tAccounts, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			break;
 		}
 		}
 		InvalidateRect(hWnd, NULL, TRUE);
@@ -375,8 +376,6 @@ void Paint(HWND hWnd)
 	PMainWindow pSelf = GetWindowLong(hWnd, 0);
 	PAINTSTRUCT ps;
 	hdc = BeginPaint(hWnd, &ps);
-
-
 	
 	switch (pSelf->state) {
 	case sDrivers:
@@ -384,6 +383,9 @@ void Paint(HWND hWnd)
 		break;
 	case sAccounts:
 		PrintTable(pSelf, hdc, pSelf->tAccounts);
+		break;
+	case sCars: 
+		PrintTable(pSelf, hdc, pSelf->tCars);
 	}
 	EndPaint(hWnd, &ps);
 }

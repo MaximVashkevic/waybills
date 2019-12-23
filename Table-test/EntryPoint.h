@@ -38,7 +38,7 @@ const WCHAR* const OK_TEXT = L"OK";
 const WCHAR* const CANCEL_TEXT = L"Отмена";
 
 enum state {
-	sEmpty, sDrivers, sAccounts, sReport
+	sEmpty, sDrivers, sAccounts, sCars, sReport
 };
 typedef struct _tpos
 {
@@ -51,12 +51,13 @@ typedef struct _TMainWindow
 	HWND hBtnAdd;
 	HWND hBtnDelete;
 	HWND hEdit;
+	HWND hComboBox;
 	PConnection pc;
 	PDrivers drivers;
 	PAccounts accounts;
-	PSubaccounts subaccounts;
+	PCars cars;
 	enum state state;
-	PTable tDrivers, tAccounts, tTkm, tSubaccounts;
+	PTable tDrivers, tAccounts, tTkm, tCars;
 	TPos selection;
 	BOOL selected;	
 } TMainWindow, * PMainWindow;

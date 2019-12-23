@@ -376,17 +376,6 @@ void freeAccounts(PAccounts TAccounts)
 	free(TAccounts);
 }
 
-int getSubaccounts(PConnection pc, int accountID, PSubaccount* TSubaccounts)
-{
-	return 0;
-}
-
-void freeSubaccounts(PSubaccount TSubaccounts, int num)
-{
-}
-
-
-
 int getSumBySubaccount(PConnection pc, int subaccountID, PData* data)
 {
 	return 0;

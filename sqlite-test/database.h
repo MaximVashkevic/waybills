@@ -46,11 +46,7 @@ typedef struct _subaccount
 	int accountID;
 	wchar_t* TSubaccount;
 } TSubaccount, *PSubaccount;
-typedef struct _subaccounts
-{
-	PSubaccount data;
-	int count;
-} TSubaccounts, PSubaccounts;
+
 typedef struct _TKM
 {
 	int id;
@@ -63,7 +59,11 @@ typedef struct _car
 	int id;
 	wchar_t* number;
 } TCar, *PCar;
-
+typedef struct _cars
+{
+	PCar data;
+	int count;
+} TCars, PCars;
 typedef struct _data
 {
 	int sum;

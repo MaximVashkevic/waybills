@@ -69,6 +69,7 @@ BEGIN
     END
     MENUITEM "Водители",                    IDM_DRIVERS
     MENUITEM "Счета",                       IDM_ACCOUNTS
+    MENUITEM "Машины",                      IDM_CARS
     MENUITEM "Отчёт",                       IDM_REPORT
 END
 
