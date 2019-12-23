@@ -89,7 +89,9 @@ PCars getCars(PConnection pc);
 void freeCars(PCars cars);
 
 
-PData* getSumByDriver(PConnection pc, int driverID);
+PData getSumByDriver(PConnection pc, int driverID);
+int getTotalSumByDriver(PConnection pc, int driverID);
+int getTotalSum(PConnection pc);
 void freeData(PData data);
 
 

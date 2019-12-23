@@ -177,10 +177,15 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 			}
 			break;
 		case IDM_REPORT:
-			pSelf->state = sReport;
-			ShowWindow(pSelf->hBtnAdd, SW_HIDE);
-			ShowWindow(pSelf->hBtnDelete, SW_HIDE);
-
+			if (pSelf->state != sReport)
+			{
+				pSelf->selected = FALSE;
+				pSelf->state = sReport;
+				if (pSelf->pc)
+					LoadReport(hWnd);
+				ShowWindow(pSelf->hBtnAdd, SW_HIDE);
+				ShowWindow(pSelf->hBtnDelete, SW_HIDE);
+			}
 			break;
 		}
 		InvalidateRect(pSelf->hWnd, NULL, TRUE);
@@ -375,40 +380,45 @@ void PrintTable(PMainWindow pSelf, HDC hdc, PTable t)
 		y = t->y;
 		for (int i = 0; i < t->rowCount; i++)
 		{
-			if (pSelf->selected && (i == pSelf->selection.i))
+			x = t->x;
+			for (int j = 0; j < t->colCount; j++)
 			{
-				SaveDC(hdc);
-				SetBkColor(hdc, BACK_COLOR);
-			}
-			switch (getDataType(t, i, 0))
-			{
-			case tText:
-				s = (LPWSTR)getData(t, i, 0);
-				break;
-			case tInt:
-				s = malloc(STRBUF_MAX_SIZE);
-				if (s)
+				if (pSelf->selected && (i == pSelf->selection.i))
 				{
-					num = (int*)(getData(t, i, 0));
-					wsprintf("%i", s, *num);
+					SaveDC(hdc);
+					SetBkColor(hdc, BACK_COLOR);
 				}
-			}
-			StringCchLength(s, STRBUF_MAX_SIZE, pcch);
-			if (pcch)
-			{
-				TextOut(hdc, x, y, s, *pcch);
-			}
-			if (pSelf->selected && (i == pSelf->selection.i))
-			{
-				RestoreDC(hdc, -1);
-			}
-			if (getDataType(t, i, 0) == tInt && s)
-			{
-				free(s);
+				switch (getDataType(t, i, j))
+				{
+				case tText:
+					s = (LPWSTR)getData(t, i, j);
+					break;
+				case tInt:
+					s = malloc(STRBUF_MAX_SIZE*sizeof(WCHAR));
+					if (s)
+					{
+						num = (int*)(getData(t, i, j));
+						int n = *num;
+						StringCbPrintf(s,STRBUF_MAX_SIZE, L"%d", n);
+					}
+				}
+				StringCchLength(s, STRBUF_MAX_SIZE, pcch);
+				if (pcch)
+				{
+					TextOut(hdc, x, y, s, *pcch);
+				}
+				if (pSelf->selected && (i == pSelf->selection.i))
+				{
+					RestoreDC(hdc, -1);
+				}
+				if (getDataType(t, i, j) == tInt && s)
+				{
+					free(s);
+				}
+				x += t->colWidths[j];
 			}
 			y += t->rowHeight;
 		}
-
 	}
 	free(pcch);
 }
@@ -434,7 +444,7 @@ void Paint(HWND hWnd)
 		PrintTable(pSelf, hdc, pSelf->tCars);
 		break;
 	case sReport:
-		PrintTable(pSelf, hdc, pSelf->drivers);
+		PrintTable(pSelf, hdc, pSelf->tReport);
 	}
 	EndPaint(hWnd, &ps);
 }
@@ -505,6 +515,44 @@ void LoadCars(HWND hWnd)
 	}
 }
 
+void LoadReport(HWND hWnd)
+{
+	PMainWindow pSelf;
+	int i;
+	pSelf = (PMainWindow)GetWindowLong(hWnd, 0);
+	LoadAccounts(hWnd);
+	LoadDrivers(hWnd);
+	/*if (pSelf->sums)
+	{
+		freeCars(pSelf->cars);
+	}
+	pSelf->cars = getCars(pSelf->pc);*/
+	if (pSelf->tReport)
+	{
+		freeTable(pSelf->tReport);
+	}
+	pSelf->tReport = createTable(pSelf->drivers->count + 1, pSelf->accounts->count + 2, 0, 0);
+	setColWidth(pSelf->tReport, 0, 200);
+	pSelf->sums = (PData*)malloc(sizeof(PData) * (pSelf->drivers->count));
+	pSelf->totals = (int*)malloc(sizeof(int) * (pSelf->drivers->count) + 1);
+	pSelf->totals[pSelf->drivers->count] = getTotalSum(pSelf->pc);
+	setData(pSelf->tReport, 0, pSelf->tReport->colCount - 1, &(pSelf->totals[pSelf->drivers->count]), tInt);
+	for (int i = 0; i < pSelf->drivers->count; i++)
+	{
+		setData(pSelf->tReport, i + 1, 0, (pSelf->drivers->data)[i].name, tText);
+		pSelf->totals[i] = getTotalSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
+		setData(pSelf->tReport, i + 1, pSelf->tReport->colCount - 1, &(pSelf->totals[i]), tInt);
+		pSelf->sums[i] = getSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
+		for (int j = 0; j < pSelf->sums[i]->count; j++)
+		{
+			setData(pSelf->tReport, i + 1, j + 1, &(pSelf->sums[i]->data[j].sum), tInt);
+		}
+	}
+	for (int i = 0; i < pSelf->accounts->count; i++)
+	{
+		setData(pSelf->tReport, 0, i + 1, (pSelf->accounts->data)[i].name, tText);
+	}
+}
 
 LPWORD lpwAlign(LPWORD lpIn)
 {

@@ -56,7 +56,8 @@ const char* const COUNT_CARS_QUERY = "SELECT COUNT() FROM Cars;";
 const char* const GET_CARS_QUERY = "SELECT * FROM Cars;";
 
 const char* const GET_SUM_BY_DRIVER_QUERY = "SELECT TKM.AccountID, SUM(TKM.Amount) from TKM INNER JOIN Waybills ON Waybills.ID = TKM.WaybillID WHERE Waybills.DriverID = :DriverID GROUP BY TKM.AccountID;";
-
+const char* const GET_TOTAL_SUM_BY_DRIVER_QUERY = "SELECT SUM(TKM.Amount) from TKM INNER JOIN Waybills ON Waybills.ID = TKM.WaybillID WHERE Waybills.DriverID = :DriverID;";
+const char* const GET_TOTAL_SUM = "SELECT SUM(TKM.Amount) from TKM;";
 const char* const DELETE_DRIVER_QUERY = "DELETE FROM Drivers WHERE ID = :ID;";
 const char* const DELETE_CAR_QUERY = "DELETE FROM Cars WHERE ID = :ID;";
 const char* const DELETE_WAYBILL_QUERY = "DELETE FROM Waybills WHERE ID = :ID;";
@@ -416,7 +417,7 @@ void freeAccounts(PAccounts accounts)
 	free(accounts);
 }
 
-PData* getSumByDriver(PConnection pc, int driverID)
+PData getSumByDriver(PConnection pc, int driverID)
 {
 	sqlite3_stmt* stmtCount, * stmtGet;
 	int count;
@@ -462,6 +463,40 @@ PData* getSumByDriver(PConnection pc, int driverID)
 		}
 		sqlite3_finalize(stmtCount);
 		sqlite3_exec(pc->db, COMMIT_QUERY, NULL, 0, NULL);
+	}
+	return result;
+}
+
+int getTotalSumByDriver(PConnection pc, int driverID)
+{
+	sqlite3_stmt* stmt;
+	int result;
+	result = 0;
+	if (pc)
+	{
+		if (sqlite3_prepare_v2(pc->db, GET_TOTAL_SUM_BY_DRIVER_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
+		{
+			if (sqlite3_step(stmt) == SQLITE_ROW)
+				result = sqlite3_column_int(stmt, 0);
+		}
+		sqlite3_finalize(stmt);
+	}
+	return result;
+}
+
+int getTotalSum(PConnection pc)
+{
+	sqlite3_stmt* stmt;
+	int result;
+	result = 0;
+	if (pc)
+	{
+		if (sqlite3_prepare_v2(pc->db, GET_TOTAL_SUM, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
+		{
+			if (sqlite3_step(stmt) == SQLITE_ROW)
+				result = sqlite3_column_int(stmt, 0);
+		}
+		sqlite3_finalize(stmt);
 	}
 	return result;
 }

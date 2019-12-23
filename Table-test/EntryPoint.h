@@ -56,8 +56,10 @@ typedef struct _TMainWindow
 	PDrivers drivers;
 	PAccounts accounts;
 	PCars cars;
+	PData* sums;
+	int* totals;
 	enum state state;
-	PTable tDrivers, tAccounts, tTkm, tCars;
+	PTable tDrivers, tAccounts, tTkm, tCars, tReport;
 	TPos selection;
 	BOOL selected;	
 } TMainWindow, * PMainWindow;
@@ -73,5 +75,6 @@ void Paint(HWND hWnd);
 void LoadDrivers(HWND hWnd);
 void LoadAccounts(HWND hWnd);
 void LoadCars(HWND hWnd);
+void LoadReport(HWND hWnd);
 LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
 TPos getID(PTable t, int x, int y);

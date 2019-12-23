@@ -39,16 +39,21 @@ PTable createTable(int rows, int columns, int x, int y)
 	return t;
 }
 
-void freeTable(PTable TTable)
+void freeTable(PTable table)
 {
-	if (TTable)
+	if (table)
 	{
-		if (TTable->colWidths)
-			free(TTable->colWidths);
-		if (TTable->cells)
-			free(TTable->cells);
-		free(TTable);
+		if (table->colWidths)
+			free(table->colWidths);
+		if (table->cells)
+			free(table->cells);
+		free(table);
 	}
+}
+
+void setColWidth(PTable table, int column, int width)
+{
+	table->colWidths[column] = width;
 }
 
 void setData(PTable TTable, int row, int column, void* data, enum type type)
