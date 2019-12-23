@@ -63,7 +63,7 @@ typedef struct _cars
 {
 	PCar data;
 	int count;
-} TCars, PCars;
+} TCars, *PCars;
 typedef struct _data
 {
 	int sum;
@@ -82,13 +82,15 @@ int addSubaccount(PConnection pc, int accountID, wchar_t* TSubaccount);
 int addTKM(PConnection pc, int waybillID, int subaccountID, int amount);
 
 PDrivers getDrivers(PConnection pc);
-void freeDrivers(PDrivers TDrivers);
+void freeDrivers(PDrivers drivers);
 
 PAccounts getAccounts(PConnection pc);
-void freeAccounts(PAccounts TAccounts);
+void freeAccounts(PAccounts accounts);
 
-int getSubaccounts(PConnection pc, int accountID, PSubaccount* TSubaccounts);
-void freeSubaccounts(PSubaccount TSubaccounts, int num);
+PCars getCars(PConnection pc);
+void freeCars(PCars cars);
+
+
 
 int getSumBySubaccount(PConnection pc, int subaccountID, PData* data);
 int getSumByAccount(PConnection pc, int accountID, PData* data);

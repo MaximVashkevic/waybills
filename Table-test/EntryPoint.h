@@ -72,5 +72,6 @@ PWSTR SaveDialog(HWND hWnd);
 void Paint(HWND hWnd);
 void LoadDrivers(HWND hWnd);
 void LoadAccounts(HWND hWnd);
+void LoadCars(HWND hWnd);
 LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
 TPos getID(PTable t, int x, int y);

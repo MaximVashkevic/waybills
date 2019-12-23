@@ -60,8 +60,8 @@ const char* const COUNT_DRIVERS_QUERY = "SELECT COUNT() FROM Drivers;";
 const char* const COUNT_ACCOUNTS_QUERY = "SELECT COUNT() FROM Accounts;";
 const char* const GET_ACCOUNTS_QUERY = "SELECT * FROM Accounts;";
 
-const char* const COUNT_SUBACCOUNTS_QUERY = "SELECT COUNT() FROM Subaccounts WHERE ID = :ID;";
-const char* const GET_SUBACCOUNTS_QUERY = "SELECT * FROM Subaccounts WHERE ID = :ID;";
+const char* const COUNT_CARS_QUERY = "SELECT COUNT() FROM Cars;";
+const char* const GET_CARS_QUERY = "SELECT * FROM Cars;";
 
 const char* const COUNT_SUM_BY_ACCOUNT_QUERY = "SELECT COUNT() FROM TKM GROUP BY ";
 
@@ -361,24 +361,86 @@ PAccounts getAccounts(PConnection pc)
 	return result;
 }
 
-void freeAccounts(PAccounts TAccounts)
+PCars getCars(PConnection pc)
 {
+	sqlite3_stmt* stmtCount, * stmtGet;
+	int count;
 	int i;
-	if (TAccounts)
+	const wchar_t* name;
+	PCars result;
+
+	result = (PCars)calloc(1, sizeof(TCars));
+	if (result)
 	{
-		for (i = 0; i < TAccounts->count; i++)
+		count = 0;
+		sqlite3_exec(pc->db, BEGIN_TRANSACTION_QUERY, NULL, 0, NULL);
+		if (sqlite3_prepare_v2(pc->db, COUNT_CARS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
 		{
-			free((TAccounts->data)[i].name);
+			if (sqlite3_step(stmtCount) == SQLITE_ROW)
+			{
+				count = sqlite3_column_int(stmtCount, 0);
+				result->count = count;
+				result->data = (PCar)calloc(count, sizeof(TCar));
+
+				if (result->data != NULL) {
+					if (sqlite3_prepare_v2(pc->db, GET_CARS_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
+					{
+						i = 0;
+						while (i < count)
+						{
+							if (sqlite3_step(stmtGet) == SQLITE_ROW)
+							{
+								name = sqlite3_column_text16(stmtGet, 1);
+								(result->data)[i].id = sqlite3_column_int(stmtGet, 0);
+								(result->data)[i].number = _wcsdup(name);
+								wprintf(L"%s\n", name);
+							}
+							i++;
+						}
+					}
+					sqlite3_finalize(stmtGet);
+				}
+				else
+				{
+					free(result);
+					result = NULL;
+				}
+			}
 		}
-		if (TAccounts->data)
-			free(TAccounts->data);
+		sqlite3_finalize(stmtCount);
+		sqlite3_exec(pc->db, COMMIT_QUERY, NULL, 0, NULL);
 	}
-	free(TAccounts);
+	return result;
 }
 
-int getSumBySubaccount(PConnection pc, int subaccountID, PData* data)
+void freeCars(PCars cars)
 {
-	return 0;
+	int i;
+	if (cars)
+	{
+		for (i = 0; i < cars->count; i++)
+		{
+			free((cars->data)[i].number);
+		}
+		if (cars->data)
+			free(cars->data);
+	}
+	free(cars);
+}
+
+void freeAccounts(PAccounts accounts)
+{
+	int i;
+	if (accounts)
+	{
+		for (i = 0; i < accounts->count; i++)
+		{
+			free((accounts->data)[i].name);
+		}
+		if (accounts->data)
+			free(accounts->data);
+	}
+	free(accounts);
 }
 
 int getSumByAccount(PConnection pc, int accountID, PData* data)

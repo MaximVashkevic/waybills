@@ -38,7 +38,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				0, 0, 100, 20, hWnd, IDC_BTN_ADD, 0, NULL);
 			pSelf->hBtnDelete = CreateWindowEx(0, L"BUTTON", L"Удалить", WS_CHILD | BS_PUSHBUTTON,
 				105, 0, 100, 20, hWnd, IDC_BTN_DELETE, 0, NULL);
-
+			//pSelf->hComboBox = CreateWindowEx()
 			pSelf->hEdit = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | ES_AUTOHSCROLL,
 				120, 0, 150, 40, hWnd, IDC_EDIT, (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE), NULL);
 			pSelf->state = sEmpty;
@@ -91,6 +91,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 						addDriver(pSelf->pc, s);
 						LoadDrivers(hWnd);
 						break;
+					case sCars:
+						addCar(pSelf->pc, s);
+						LoadCars(hWnd);
+						break;
 					}
 					free(s);
 				}
@@ -108,6 +112,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 					case sDrivers:
 						deleteFromTable(pSelf->pc, tDriver, pSelf->drivers->data[pSelf->selection.i].id);
 						LoadDrivers(hWnd);
+						pSelf->selected = FALSE;
+						break;
+					case sCars:
+						deleteFromTable(pSelf->pc, tCar, pSelf->cars->data[pSelf->selection.i].id);
+						LoadCars(hWnd);
 						pSelf->selected = FALSE;
 						break;
 					}
@@ -152,6 +161,20 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				}
 			}
 			break;
+		case IDM_CARS:
+			if (pSelf->state != sCars)
+			{
+				pSelf->selected = FALSE;
+				pSelf->state = sCars;
+				if (pSelf->pc)
+					LoadCars(hWnd);
+				if (!IsWindowVisible(pSelf->hBtnAdd))
+				{
+					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
+					ShowWindow(pSelf->hBtnDelete, SW_SHOW);
+				}
+			}
+			break;
 		case IDM_REPORT:
 			pSelf->state = sReport;
 			ShowWindow(pSelf->hBtnAdd, SW_HIDE);
@@ -175,6 +198,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 			Select(pSelf, pSelf->tAccounts, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 			break;
 		}
+		case sCars:
+			Select(pSelf, pSelf->tCars, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			break;
 		}
 		InvalidateRect(hWnd, NULL, TRUE);
 		//ShowEdit(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pSelf->hEdit);
@@ -431,6 +457,28 @@ void LoadAccounts(HWND hWnd)
 	for (int i = 0; i < pSelf->accounts->count; i++)
 	{
 		setData(pSelf->tAccounts, i, 0, (pSelf->accounts->data)[i].name, tText);
+	}
+}
+
+void LoadCars(HWND hWnd)
+{
+	PMainWindow pSelf;
+	int i;
+	pSelf = (PMainWindow)GetWindowLong(hWnd, 0);
+	if (pSelf->cars)
+	{
+		freeCars(pSelf->cars);
+	}
+	pSelf->cars = getCars(pSelf->pc);
+	if (pSelf->tCars)
+	{
+		freeTable(pSelf->tCars);
+	}
+	pSelf->tCars = createTable(pSelf->cars->count, 1, 0, DY_TABLE);
+
+	for (int i = 0; i < pSelf->cars->count; i++)
+	{
+		setData(pSelf->tCars, i, 0, (pSelf->cars->data)[i].number, tText);
 	}
 }
 
