@@ -9,7 +9,7 @@ typedef struct _connection
 	sqlite3* db;
 } TConnection, * PConnection;
 
-enum tableType {Driver, Car, Waybill, Account, Subaccount, TKM};
+enum tableType {tDriver, tCar, tWaybill, tAccount, tSubaccount, tTKM};
 
 typedef struct _driver
 {

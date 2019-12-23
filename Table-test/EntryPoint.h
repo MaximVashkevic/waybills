@@ -3,10 +3,13 @@
 #include "../sqlite-test/database.h"
 #include "Table.h"
 
-#define MAX_STRBUF_SIZE 260
+#define STRBUF_MAX_SIZE 260
 #define IDC_BTN_ADD	(HMENU)100
-#define IDC_EDIT	(HMENU)101
+#define IDC_BTN_DELETE (HMENU)101
+#define IDC_EDIT	(HMENU)102
 #define ID_TEXT 200
+
+#define BACK_COLOR RGB(173, 216, 230)
 
 #define DLG_X 10
 #define DLG_Y 10
@@ -30,30 +33,33 @@
 
 #define INV_POS 0xFFFFFFFF
 
+const WCHAR* const ADD_TEXT = L"Добавить";
+const WCHAR* const OK_TEXT = L"OK";
+const WCHAR* const CANCEL_TEXT = L"Отмена";
+
 enum state {
 	sEmpty, sDrivers, sAccounts, sReport
 };
+typedef struct _tpos
+{
+	int i;
+	int j;
+} TPos, *PPos;
 typedef struct _TMainWindow
 {
 	HWND hWnd;
 	HWND hBtnAdd;
 	HWND hBtnDelete;
 	HWND hEdit;
-	enum state state;
 	PConnection pc;
-	PTable tDrivers, tAccounts, tTkm, tSubaccounts;
 	PDrivers drivers;
 	PAccounts accounts;
 	PSubaccounts subaccounts;
-	int id;
-	BOOL selected;
-	
+	enum state state;
+	PTable tDrivers, tAccounts, tTkm, tSubaccounts;
+	TPos selection;
+	BOOL selected;	
 } TMainWindow, * PMainWindow;
-typedef struct _tpos
-{
-	int x;
-	int y;
-} TPos, *PPos;
 
 const WCHAR* const STR_SAVE_TITLE = L"Сохранить как";
 const WCHAR* const STR_OPEN_TITLE = L"Открыть";

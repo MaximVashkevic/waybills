@@ -418,22 +418,22 @@ int deleteFromTable(PConnection pc, enum tableType type, int id)
 	{
 		switch (type)
 		{
-		case Driver:
+		case tDriver:
 			sql = DELETE_DRIVER_QUERY;
 			break;
-		case Car:
+		case tCar:
 			sql = DELETE_CAR_QUERY;
 			break;
-		case Waybill:
+		case tWaybill:
 			sql = DELETE_WAYBILL_QUERY;
 			break;
-		case TKM:
+		case tTKM:
 			sql = DELETE_TKM_QUERY;
 			break;
-		case Account:
+		case tAccount:
 			sql = DELETE_ACCOUNT_QUERY;
 			break;
-		case Subaccount:
+		case tSubaccount:
 			sql = DELETE_SUBACCOUNT_QUERY;
 			break;
 		}

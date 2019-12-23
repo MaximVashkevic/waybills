@@ -26,13 +26,20 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 			pSelf->hBtnAdd = CreateWindowEx(0, L"BUTTON", L"Добавить", WS_CHILD | BS_PUSHBUTTON,
 				0, 0, 100, 20, hWnd, IDC_BTN_ADD, 0, NULL);
 			pSelf->hBtnDelete = CreateWindowEx(0, L"BUTTON", L"Удалить", WS_CHILD | BS_PUSHBUTTON,
-				0, 0, 100, 20, hWnd, IDC_BTN_ADD, 0, NULL);
+				105, 0, 100, 20, hWnd, IDC_BTN_DELETE, 0, NULL);
 
 			pSelf->hEdit = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | ES_AUTOHSCROLL,
 				120, 0, 150, 40, hWnd, IDC_EDIT, (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE), NULL);
 			pSelf->state = sEmpty;
 			pSelf->pc = NULL;
 			SetWindowLong(hWnd, 0, (LONG)pSelf);
+
+			/*s afsldkkf asdkf jdsa
+			!!!!!!!!!!!!!!
+			*/
+			pSelf->pc = openDB(L"D:\\projects\\course2\\3sem\\coursework\\sqlite-test\\t2.db");
+			/*
+			*/
 		}
 		return DefWindowProc(hWnd, uMsg, wParam, lParam);
 	}
@@ -54,25 +61,48 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		Paint(hWnd);
 		break;
 	case WM_COMMAND:
-		if ((HMENU)LOWORD(wParam) == IDC_BTN_ADD && HIWORD(wParam) == BN_CLICKED)
-		{
-			LPWSTR s = (LPWSTR)Disp((HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE), hWnd, L"");
-			if (s)
+		if (HIWORD(wParam) == BN_CLICKED)
+		{//(HMENU)LOWORD(wParam) == IDC_BTN_ADD &&
+			switch (LOWORD(wParam))
 			{
-				switch (pSelf->state)
+			case IDC_BTN_ADD:
+			{
+				LPWSTR s = (LPWSTR)Disp((HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE), hWnd, L"");
+				if (s)
 				{
-				case sAccounts:
-					addAccount(pSelf->pc, s);
-					LoadAccounts(hWnd);
-					break;
-				case sDrivers:
-					addDriver(pSelf->pc, s);
-					LoadDrivers(hWnd);
-					break;
+					switch (pSelf->state)
+					{
+					case sAccounts:
+						addAccount(pSelf->pc, s);
+						LoadAccounts(hWnd);
+						break;
+					case sDrivers:
+						addDriver(pSelf->pc, s);
+						LoadDrivers(hWnd);
+						break;
+					}
+					free(s);
 				}
-				free(s);
 			}
-			break;
+			case IDC_BTN_DELETE:
+				if (pSelf->selected)
+				{
+					switch (pSelf->state)
+					{
+					case sAccounts:
+						deleteFromTable(pSelf->pc, tAccount, pSelf->accounts->data[pSelf->selection.i].id);
+						LoadAccounts(hWnd);
+						pSelf->selected = FALSE;
+						break;
+					case sDrivers:
+						deleteFromTable(pSelf->pc, tDriver, pSelf->drivers->data[pSelf->selection.i].id);
+						LoadDrivers(hWnd);
+						pSelf->selected = FALSE;
+						break;
+					}
+				}
+				
+			}
 		}
 		switch (LOWORD(wParam))
 		{
@@ -85,29 +115,37 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		case IDM_DRIVERS:
 			if (pSelf->state != sDrivers)
 			{
+				pSelf->selected = FALSE;
 				pSelf->state = sDrivers;
 				if (pSelf->pc)
 					LoadDrivers(hWnd);
 				if (!IsWindowVisible(pSelf->hBtnAdd))
 				{
 					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
+					ShowWindow(pSelf->hBtnDelete, SW_SHOW);
+
 				}
 			}
 			break;
 		case IDM_ACCOUNTS:
 			if (pSelf->state != sAccounts)
 			{
+				pSelf->selected = FALSE;
 				pSelf->state = sAccounts;
 				if (pSelf->pc)
 					LoadAccounts(hWnd);
 				if (!IsWindowVisible(pSelf->hBtnAdd))
 				{
 					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
+					ShowWindow(pSelf->hBtnDelete, SW_SHOW);
 				}
 			}
 			break;
 		case IDM_REPORT:
 			pSelf->state = sReport;
+			ShowWindow(pSelf->hBtnAdd, SW_HIDE);
+			ShowWindow(pSelf->hBtnDelete, SW_HIDE);
+
 			break;
 		}
 		InvalidateRect(pSelf->hWnd, NULL, TRUE);
@@ -117,11 +155,28 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		switch (pSelf->state)
 		{
 		case sDrivers:
-			getID(pSelf->tDrivers, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-
-
+		{
+			TPos pos;
+			pos = getID(pSelf->tDrivers, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			if (pos.i != INV_POS)
+			{
+				pSelf->selected = TRUE;
+				pSelf->selection = pos;
+			}
 		}
-		ShowEdit(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pSelf->hEdit);
+		case sAccounts:
+		{
+			TPos pos;
+			pos = getID(pSelf->tAccounts, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			if (pos.i != INV_POS)
+			{
+				pSelf->selected = TRUE;
+				pSelf->selection = pos;
+			}
+		}
+		}
+		InvalidateRect(hWnd, NULL, TRUE);
+		//ShowEdit(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pSelf->hEdit);
 		break;
 
 	}
@@ -163,7 +218,7 @@ PWSTR OpenDialog(HWND hWnd)
 	OPENFILENAMEW ofn;
 	PWSTR lpszFile;
 
-	lpszFile = (PWSTR)malloc(MAX_STRBUF_SIZE * sizeof(WCHAR));
+	lpszFile = (PWSTR)malloc(STRBUF_MAX_SIZE * sizeof(WCHAR));
 	if (lpszFile)
 	{
 		lpszFile[0] = '\0';
@@ -172,7 +227,7 @@ PWSTR OpenDialog(HWND hWnd)
 		ofn.lStructSize = sizeof ofn;
 		ofn.hwndOwner = hWnd;
 		ofn.lpstrFile = lpszFile;
-		ofn.nMaxFile = MAX_STRBUF_SIZE;
+		ofn.nMaxFile = STRBUF_MAX_SIZE;
 		ofn.lpstrFilter = STR_FILTER;//last must be terminated by two \0's
 		ofn.nFilterIndex = 1;
 		ofn.lpstrFileTitle = NULL;
@@ -194,7 +249,7 @@ PWSTR SaveDialog(HWND hWnd)
 	OPENFILENAME sfn;
 	PWSTR lpszFile;
 
-	lpszFile = (PWSTR)malloc(MAX_STRBUF_SIZE * sizeof(WCHAR));
+	lpszFile = (PWSTR)malloc(STRBUF_MAX_SIZE * sizeof(WCHAR));
 	if (lpszFile)
 	{
 		lpszFile[0] = '\0';
@@ -203,7 +258,7 @@ PWSTR SaveDialog(HWND hWnd)
 		sfn.lStructSize = sizeof sfn;
 		sfn.hwndOwner = hWnd;
 		sfn.lpstrFile = lpszFile;
-		sfn.nMaxFile = MAX_STRBUF_SIZE;
+		sfn.nMaxFile = STRBUF_MAX_SIZE;
 		sfn.lpstrFilter = STR_FILTER;//last must be terminated by two \0's
 		sfn.nFilterIndex = 1;
 		sfn.lpstrFileTitle = NULL;
@@ -280,76 +335,57 @@ void createDatabase(HWND hWnd)
 	}
 }
 
+void PrintTable(PMainWindow pSelf, HDC hdc, PTable t)
+{
+	int x, y;
+	size_t* pcch = malloc(sizeof(size_t));
+	if (t)
+	{
+		x = t->x;
+		y = t->y;
+		for (int i = 0; i < t->rowCount; i++)
+		{
+			if (pSelf->selected && (i == pSelf->selection.i))
+			{
+				SaveDC(hdc);
+				SetBkColor(hdc, BACK_COLOR);
+			}
+			StringCchLength(getData(t, i, 0, tText), 30, pcch);
+			if (pcch)
+			{
+				TextOut(hdc, x, y, getData(t, i, 0, tText), *pcch);
+			}
+			if (pSelf->selected && (i == pSelf->selection.i))
+			{
+				RestoreDC(hdc, -1);
+			}
+			y += t->rowHeight;
+		}
+
+	}
+	free(pcch);
+}
+
 void Paint(HWND hWnd)
 {
 	HDC hdc;
 	RECT rc;
 	HFONT hfnt, hfntPrev;
-	LPWSTR lpszRotate = L"Hello";
 	HRESULT hr;
-	size_t* pcch = malloc(sizeof(size_t));
-	PMainWindow pSelf;
+	PMainWindow pSelf = GetWindowLong(hWnd, 0);
 	PAINTSTRUCT ps;
-	int x, y;
-	pSelf = (PMainWindow)GetWindowLong(hWnd, 0);
 	hdc = BeginPaint(hWnd, &ps);
 
 
-	/*PLOGFONT plf = (PLOGFONT)LocalAlloc(LPTR, sizeof(LOGFONT));
-
-	hr = StringCchCopy(plf->lfFaceName, 6, L"Arial");
-
-	plf->lfWeight = FW_NORMAL;
-
-	GetClientRect(hWnd, &rc);
-
-	SetBkMode(hdc, TRANSPARENT);
-
-	plf->lfEscapement = 2700;
-	hfnt = CreateFontIndirect(plf);
-	hfntPrev = SelectObject(hdc, hfnt);
-	hr = StringCchLength(lpszRotate, 22, pcch);
-	TextOut(hdc, rc.right, rc.top, lpszRotate, *pcch);
-	SelectObject(hdc, hfntPrev);
-	DeleteObject(hfnt);
-	LocalFree((LOCALHANDLE)plf);*/
-	WCHAR s[10];
+	
 	switch (pSelf->state) {
 	case sDrivers:
-		if (pSelf->tDrivers)
-		{
-			x = pSelf->tDrivers->x;
-			y = pSelf->tDrivers->y;
-			for (int i = 0; i < pSelf->tDrivers->rowCount; i++)
-			{
-				StringCchLength(getData(pSelf->tDrivers, i, 0, tText), 30, pcch);
-				if (pcch)
-				{
-					TextOut(hdc, x, y, getData(pSelf->tDrivers, i, 0, tText), *pcch);
-				}
-				y += pSelf->tDrivers->rowHeight;
-			}
-
-		}
+		PrintTable(pSelf, hdc, pSelf->tDrivers);		
 		break;
 	case sAccounts:
-		if (pSelf->tAccounts)
-		{
-			x = pSelf->tAccounts->x;
-			y = pSelf->tAccounts->y;
-			for (int i = 0; i < pSelf->tAccounts->rowCount; i++)
-			{
-				StringCchLength(getData(pSelf->tAccounts, i, 0, tText), 30, pcch);
-				if (pcch)
-				{
-					TextOut(hdc, x, y, getData(pSelf->tAccounts, i, 0, tText), *pcch);
-				}
-				y += pSelf->tAccounts->rowHeight;
-			}
-		}
+		PrintTable(pSelf, hdc, pSelf->tAccounts);
 	}
 	EndPaint(hWnd, &ps);
-	free(pcch);
 }
 
 void LoadDrivers(HWND hWnd)
@@ -417,10 +453,10 @@ BOOL DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam))
 		{
 		case IDOK:
-			result = malloc(MAX_STRBUF_SIZE * sizeof(wchar_t));
+			result = malloc(STRBUF_MAX_SIZE * sizeof(wchar_t));
 			if (result)
 			{
-				if (!GetDlgItemText(hwndDlg, ID_TEXT, result, MAX_STRBUF_SIZE))
+				if (!GetDlgItemText(hwndDlg, ID_TEXT, result, STRBUF_MAX_SIZE))
 				{
 					free(result);
 					result = 0;
@@ -465,7 +501,7 @@ LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage)
 		*lpw++ = 0;             // Predefined dialog box class (by default)
 
 		lpwsz = (LPWSTR)lpw;
-		StringCchCopy(lpwsz, 100, L"Моё окно");
+		StringCchCopy(lpwsz, 100, ADD_TEXT);
 		StringCchLength(lpwsz, 100, &nchar);
 		lpw += nchar + 1;
 
@@ -484,9 +520,10 @@ LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage)
 		*lpw++ = 0x0080;        // Button class
 
 		lpwsz = (LPWSTR)lpw;
-		nchar = 1 + MultiByteToWideChar(CP_ACP, 0, "OK", -1, lpwsz, 50);
-		lpw += nchar;
-		*lpw++ = 0;             // No creation data
+		StringCchCopy(lpwsz, 100, OK_TEXT);
+		StringCchLength(lpwsz, 100, &nchar);
+		lpw += nchar + 2;
+		*lpw++ = 0;              // No creation data
 
 		//-----------------------
 		// Define a cancel button.
@@ -503,7 +540,7 @@ LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage)
 		*lpw++ = 0x0080;        // Button class atom
 
 		lpwsz = (LPWSTR)lpw;
-		StringCchCopy(lpwsz, 100, L"Отмена");
+		StringCchCopy(lpwsz, 100, CANCEL_TEXT);
 		StringCchLength(lpwsz, 100, &nchar);
 		lpw += nchar + 2;
 		*lpw++ = 0;             // No creation data
@@ -544,7 +581,7 @@ TPos getID(PTable t, int x0, int y0)
 	if (t)
 	{
 		y = t->y;
-		i = (y0 - y) % t->rowHeight;
+		i = (y0 - y) / (t->rowHeight);
 		if (i <= t->rowCount)
 		{
 			j = 0;
@@ -556,9 +593,9 @@ TPos getID(PTable t, int x0, int y0)
 			}
 			if (j <= t->colCount)
 			{
-				return (TPos) { i, j };
+				return (TPos) { i, j - 1 };
 			}
 		}
 	}
-	return (TPos) { 0, 0 };
+	return (TPos) { INV_POS, INV_POS };
 }
