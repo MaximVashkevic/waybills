@@ -58,7 +58,7 @@ typedef struct _TMainWindow
 	PDrivers drivers;
 	PAccounts accounts;
 	PCars cars;
-	PData* sums;
+	PMatrix sums;
 	int* totals;
 	enum state state;
 	PTable tDrivers, tAccounts, tTkm, tCars, tReport;

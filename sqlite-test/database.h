@@ -68,6 +68,11 @@ typedef struct _data
 	PDatum data;
 	int count;
 } TData, *PData;
+typedef struct _matrix
+{
+	PData* matrix;
+	int count;
+} TMatrix, *PMatrix;
 
 PConnection openDB(const wchar_t* filename);
 PConnection createDB(const wchar_t* filename);

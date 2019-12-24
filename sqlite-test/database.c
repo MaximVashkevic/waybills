@@ -77,6 +77,11 @@ const char* const AMOUNT_NAME = ":Amount";
 const char* const NAME_NAME = ":Name";
 const char* const ID_NAME = ":ID";
 
+freeAndNULL(void* p)
+{
+	free(p);
+	p = NULL;
+}
 
 PConnection openDB(const wchar_t* filename)
 {
@@ -125,7 +130,7 @@ PConnection createDB(const wchar_t* filename)
 void closeDB(PConnection pc)
 {
 	sqlite3_close(pc->db);
-	free(pc);
+	freeAndNULL(pc);
 }
 
 int addDriver(PConnection pc, wchar_t* name)
@@ -225,7 +230,7 @@ PDrivers getDrivers(PConnection pc)
 	int i;
 	const wchar_t* name;
 	PDrivers result;
-	result = calloc(1, sizeof(TDrivers));
+	result =(PDrivers)calloc(1, sizeof(TDrivers));
 	if (result)
 	{
 		count = 0;
@@ -257,7 +262,7 @@ PDrivers getDrivers(PConnection pc)
 				}
 				else
 				{
-					free(result);
+					freeAndNULL(result);
 					result = NULL;
 				}
 			}
@@ -275,12 +280,12 @@ void freeDrivers(PDrivers TDrivers)
 	{
 		for (i = 0; i < TDrivers->count; i++)
 		{
-			free((TDrivers->data)[i].name);
+			freeAndNULL((TDrivers->data)[i].name);
 		}
 		if (TDrivers->data)
-			free(TDrivers->data);
+			freeAndNULL(TDrivers->data);
 	}
-	free(TDrivers);
+	freeAndNULL(TDrivers);
 }
 
 PAccounts getAccounts(PConnection pc)
@@ -324,7 +329,7 @@ PAccounts getAccounts(PConnection pc)
 				}
 				else
 				{
-					free(result);
+					freeAndNULL(result);
 					result = NULL;
 				}
 			}
@@ -376,7 +381,7 @@ PCars getCars(PConnection pc)
 				}
 				else
 				{
-					free(result);
+					freeAndNULL(result);
 					result = NULL;
 				}
 			}
@@ -394,12 +399,12 @@ void freeCars(PCars cars)
 	{
 		for (i = 0; i < cars->count; i++)
 		{
-			free((cars->data)[i].number);
+			freeAndNULL((cars->data)[i].number);
 		}
 		if (cars->data)
-			free(cars->data);
+			freeAndNULL(cars->data);
 	}
-	free(cars);
+	freeAndNULL(cars);
 }
 
 void freeAccounts(PAccounts accounts)
@@ -409,12 +414,12 @@ void freeAccounts(PAccounts accounts)
 	{
 		for (i = 0; i < accounts->count; i++)
 		{
-			free((accounts->data)[i].name);
+			freeAndNULL((accounts->data)[i].name);
 		}
 		if (accounts->data)
-			free(accounts->data);
+			freeAndNULL(accounts->data);
 	}
-	free(accounts);
+	freeAndNULL(accounts);
 }
 
 PData getSumByDriver(PConnection pc, int driverID)
@@ -456,7 +461,7 @@ PData getSumByDriver(PConnection pc, int driverID)
 				}
 				else
 				{
-					free(result);
+					freeAndNULL(result);
 					result = NULL;
 				}
 			}
@@ -503,7 +508,13 @@ int getTotalSum(PConnection pc)
 
 void freeData(PData data)
 {
-	free(data);
+	if (data)
+	{
+		for (int i = 0; i < data->count; i++) {
+			freeAndNULL(&(data->data[i]));
+		}
+	freeAndNULL(data);
+	}
 }
 
 int deleteFromTable(PConnection pc, enum tableType type, int id)

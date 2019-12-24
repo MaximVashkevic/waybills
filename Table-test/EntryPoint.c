@@ -3,7 +3,8 @@
 #include <windowsx.h>
 #include "resource.h"
 #include <strsafe.h>
-
+#include <malloc.h>
+extern freeAndNULL(void * p);
 const wchar_t* const lpszClassName = L"MainWindowClass";
 
 void ShowEdit(int x, int y, HWND hWnd)
@@ -98,7 +99,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 						LoadCars(pSelf);
 						break;
 					}
-					free(s);
+					freeAndNULL(s);
 				}
 				break;
 			}
@@ -132,6 +133,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 					pSelf->driverID = pSelf->drivers->data[pSelf->selection.i].id;
 					pSelf->state = sEditing;
 					LoadTKM(pSelf);
+					ShowWindow(pSelf->hBtnAdd, SW_HIDE);
+					ShowWindow(pSelf->hBtnDelete, SW_HIDE);
+					ShowWindow(pSelf->hBtnEdit, SW_HIDE);
 				}
 			}
 
@@ -170,6 +174,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				{
 					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
 					ShowWindow(pSelf->hBtnDelete, SW_SHOW);
+					ShowWindow(pSelf->hBtnEdit, SW_HIDE);
 				}
 			}
 			break;
@@ -184,6 +189,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				{
 					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
 					ShowWindow(pSelf->hBtnDelete, SW_SHOW);
+					ShowWindow(pSelf->hBtnEdit, SW_HIDE);
 				}
 			}
 			break;
@@ -196,6 +202,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 					LoadReport(pSelf);
 				ShowWindow(pSelf->hBtnAdd, SW_HIDE);
 				ShowWindow(pSelf->hBtnDelete, SW_HIDE);
+				ShowWindow(pSelf->hBtnEdit, SW_HIDE);
 			}
 			break;
 		}
@@ -251,7 +258,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	RegisterClassEx(&wcex);
 
 
-	hMainWindow = CreateWindowEx(0, lpszClassName, L"My Table", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 0, 0, 800, 600, 0, 0, 0, NULL);
+	hMainWindow = CreateWindowEx(0, lpszClassName, L"Таблица", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 0, 0, 800, 600, 0, 0, 0, NULL);
 
 	while (GetMessage(&msg, 0, 0, 0))
 	{
@@ -286,7 +293,7 @@ PWSTR OpenDialog(HWND hWnd)
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 		if (GetOpenFileName(&ofn) != TRUE)
 		{
-			free(lpszFile);
+			freeAndNULL(lpszFile);
 			lpszFile = NULL;
 		}
 	}
@@ -318,7 +325,7 @@ PWSTR SaveDialog(HWND hWnd)
 
 		if (GetSaveFileName(&sfn) != TRUE)
 		{
-			free(lpszFile);
+			freeAndNULL(lpszFile);
 			lpszFile = NULL;
 		}
 	}
@@ -357,7 +364,7 @@ void openDatabase(HWND hWnd)
 				closeDB(pSelf->pc);
 			}
 			pSelf->pc = openDB(filename);
-			free(filename);
+			freeAndNULL(filename);
 		}
 	}
 }
@@ -377,7 +384,7 @@ void createDatabase(HWND hWnd)
 				closeDB(pSelf->pc);
 			}
 			pSelf->pc = createDB(filename);
-			free(filename);
+			freeAndNULL(filename);
 		}
 	}
 }
@@ -427,14 +434,14 @@ void PrintTable(PMainWindow pSelf, HDC hdc, PTable t)
 				}
 				if (getDataType(t, i, j) == tInt && s)
 				{
-					free(s);
+					freeAndNULL(s);
 				}
 				x += t->colWidths[j];
 			}
 			y += t->rowHeight;
 		}
 	}
-	free(pcch);
+	freeAndNULL(pcch);
 }
 
 void Paint(HWND hWnd)
@@ -528,30 +535,44 @@ void LoadReport(PMainWindow pSelf)
 	int i;
 	LoadAccounts(pSelf);
 	LoadDrivers(pSelf);
-	/*if (pSelf->sums)
-	{
-		freeCars(pSelf->cars);
-	}
-	pSelf->cars = getCars(pSelf->pc);*/
 	if (pSelf->tReport)
 	{
 		freeTable(pSelf->tReport);
 	}
 	pSelf->tReport = createTable(pSelf->drivers->count + 1, pSelf->accounts->count + 2, 0, 0);
 	setColWidth(pSelf->tReport, 0, 200);
-	pSelf->sums = (PData*)malloc(sizeof(PData) * (pSelf->drivers->count));
+	if (pSelf->sums)
+	{
+		for (int i = 0; i < pSelf->sums->count; i++)
+		{
+			if (&((pSelf->sums->matrix)[i]))
+			{
+				freeData(&((pSelf->sums->matrix)[i]));
+			}
+		}
+		freeAndNULL(pSelf->sums);
+	}
+	pSelf->sums = (PMatrix)calloc((pSelf->drivers->count), sizeof(TMatrix));
+	pSelf->sums->count = (pSelf->drivers->count);
+	pSelf->sums->matrix = (PData)calloc(pSelf->sums->count, sizeof(TData));
+	
+	if (pSelf->totals)
+	{
+		freeAndNULL(pSelf->totals);
+	}
+
 	pSelf->totals = (int*)malloc(sizeof(int) * (pSelf->drivers->count) + 1);
 	pSelf->totals[pSelf->drivers->count] = getTotalSum(pSelf->pc);
 	setData(pSelf->tReport, 0, pSelf->tReport->colCount - 1, &(pSelf->totals[pSelf->drivers->count]), tInt);
 	for (int i = 0; i < pSelf->drivers->count; i++)
 	{
 		setData(pSelf->tReport, i + 1, 0, (pSelf->drivers->data)[i].name, tText);
-		pSelf->totals[i] = getTotalSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
+		(pSelf->totals)[i] = getTotalSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
 		setData(pSelf->tReport, i + 1, pSelf->tReport->colCount - 1, &(pSelf->totals[i]), tInt);
-		pSelf->sums[i] = getSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
-		for (int j = 0; j < pSelf->sums[i]->count; j++)
+		pSelf->sums->matrix[i] = getSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
+		for (int j = 0; j < pSelf->sums->matrix[i]->count; j++)
 		{
-			setData(pSelf->tReport, i + 1, j + 1, &(pSelf->sums[i]->data[j].sum), tInt);
+			setData(pSelf->tReport, i + 1, j + 1, &(pSelf->sums->matrix[i]->data[j].sum), tInt);
 		}
 	}
 	for (int i = 0; i < pSelf->accounts->count; i++)
@@ -562,7 +583,7 @@ void LoadReport(PMainWindow pSelf)
 
 void LoadTKM(PMainWindow pSelf)
 {
-	//pSelf.
+	//pSelf->tTkm = createTable
 }
 
 LPWORD lpwAlign(LPWORD lpIn)
@@ -590,7 +611,7 @@ BOOL DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				if (!GetDlgItemText(hwndDlg, ID_TEXT, result, STRBUF_MAX_SIZE))
 				{
-					free(result);
+					freeAndNULL(result);
 					result = 0;
 				}
 			}

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+extern freeAndNULL(void* p);
+
 PTable createTable(int rows, int columns, int x, int y)
 {
 	int i, j;
@@ -30,9 +32,9 @@ PTable createTable(int rows, int columns, int x, int y)
 		else
 		{
 			if (t->cells)
-				free(t->cells);
+				freeAndNULL(t->cells);
 			if (t)
-				free(t);
+				freeAndNULL(t);
 			t = NULL;
 		}
 	}
@@ -44,10 +46,10 @@ void freeTable(PTable table)
 	if (table)
 	{
 		if (table->colWidths)
-			free(table->colWidths);
+			freeAndNULL(table->colWidths);
 		if (table->cells)
-			free(table->cells);
-		free(table);
+			freeAndNULL(table->cells);
+		freeAndNULL(table);
 	}
 }
 
