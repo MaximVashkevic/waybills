@@ -435,7 +435,7 @@ PData getSumByDriver(PConnection pc, int driverID)
 	{
 		count = 0;
 		sqlite3_exec(pc->db, BEGIN_TRANSACTION_QUERY, NULL, 0, NULL);
-		if (sqlite3_prepare_v2(pc->db, COUNT_DRIVERS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
+		if (sqlite3_prepare_v2(pc->db, COUNT_ACCOUNTS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
 		{
 			if (sqlite3_step(stmtCount) == SQLITE_ROW)
 			{
@@ -510,10 +510,9 @@ void freeData(PData data)
 {
 	if (data)
 	{
-		for (int i = 0; i < data->count; i++) {
-			freeAndNULL(&(data->data[i]));
-		}
-	freeAndNULL(data);
+		if (data->data)
+			freeAndNULL(data->data);
+		freeAndNULL(data);
 	}
 }
 

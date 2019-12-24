@@ -539,46 +539,58 @@ void LoadReport(PMainWindow pSelf)
 	{
 		freeTable(pSelf->tReport);
 	}
-	pSelf->tReport = createTable(pSelf->drivers->count + 1, pSelf->accounts->count + 2, 0, 0);
+	pSelf->tReport = createTable(pSelf->drivers->count + 1, pSelf->accounts->count + 2, 0, 0); // + 1 + 2
 	setColWidth(pSelf->tReport, 0, 200);
+	for (int i = 0; i < pSelf->tDrivers->rowCount; i++)
+	{
+		setData(pSelf->tReport, i + 1, 0, getData(pSelf->tDrivers, i, 0), tText);
+	}
+	for (int i = 0; i < pSelf->tAccounts->rowCount; i++)
+	{
+		setData(pSelf->tReport, 0, i + 1, getData(pSelf->tAccounts, i, 0), tText);
+	}
 	if (pSelf->sums)
 	{
-		for (int i = 0; i < pSelf->sums->count; i++)
+		if (pSelf->sums->matrix)
 		{
-			if (&((pSelf->sums->matrix)[i]))
+			for (int i = 0; i < pSelf->sums->count; i++)
 			{
-				freeData(&((pSelf->sums->matrix)[i]));
+				freeData(pSelf->sums->matrix[i]);
 			}
+			freeAndNULL(pSelf->sums->matrix);
 		}
 		freeAndNULL(pSelf->sums);
 	}
-	pSelf->sums = (PMatrix)calloc((pSelf->drivers->count), sizeof(TMatrix));
-	pSelf->sums->count = (pSelf->drivers->count);
-	pSelf->sums->matrix = (PData)calloc(pSelf->sums->count, sizeof(TData));
-	
 	if (pSelf->totals)
 	{
 		freeAndNULL(pSelf->totals);
 	}
-
-	pSelf->totals = (int*)malloc(sizeof(int) * (pSelf->drivers->count) + 1);
-	pSelf->totals[pSelf->drivers->count] = getTotalSum(pSelf->pc);
-	setData(pSelf->tReport, 0, pSelf->tReport->colCount - 1, &(pSelf->totals[pSelf->drivers->count]), tInt);
-	for (int i = 0; i < pSelf->drivers->count; i++)
+	pSelf->totals = (int*)calloc(pSelf->drivers->count + 1, sizeof(int));
+	pSelf->sums = (PMatrix)calloc(1, sizeof(TMatrix));
+	if (pSelf->sums)
 	{
-		setData(pSelf->tReport, i + 1, 0, (pSelf->drivers->data)[i].name, tText);
-		(pSelf->totals)[i] = getTotalSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
-		setData(pSelf->tReport, i + 1, pSelf->tReport->colCount - 1, &(pSelf->totals[i]), tInt);
-		pSelf->sums->matrix[i] = getSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
-		for (int j = 0; j < pSelf->sums->matrix[i]->count; j++)
+		pSelf->sums->count = pSelf->drivers->count;
+		pSelf->sums->matrix = (PData*)calloc(pSelf->sums->count, sizeof(PData));
+		if (pSelf->sums->matrix && pSelf->totals)
 		{
-			setData(pSelf->tReport, i + 1, j + 1, &(pSelf->sums->matrix[i]->data[j].sum), tInt);
+			pSelf->totals[pSelf->drivers->count] = getTotalSum(pSelf->pc);
+			setData(pSelf->tReport, 0, pSelf->tReport->colCount - 1, &(pSelf->totals[pSelf->drivers->count]), tInt);
+			for (int i = 0; i < pSelf->drivers->count; i++)
+			{
+				pSelf->sums->matrix[i] = getSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
+				for (int j = 0; j < pSelf->sums->matrix[i]->count; j++)
+				{
+					setData(pSelf->tReport, i + 1, j + 1, &(pSelf->sums->matrix[i]->data[j].sum), tInt);
+				}
+				pSelf->totals[i] = getTotalSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
+				setData(pSelf->tReport, i + 1, pSelf->tReport->colCount - 1, &(pSelf->totals[i]), tInt);
+
+			}
 		}
+
 	}
-	for (int i = 0; i < pSelf->accounts->count; i++)
-	{
-		setData(pSelf->tReport, 0, i + 1, (pSelf->accounts->data)[i].name, tText);
-	}
+	
+	
 }
 
 void LoadTKM(PMainWindow pSelf)
