@@ -55,9 +55,7 @@ typedef struct _TMainWindow
 	HWND hEdit;
 	HWND hComboBox;
 	PConnection pc;
-	PDrivers drivers;
-	PAccounts accounts;
-	PCars cars;
+	PArray drivers, accounts, cars;
 	PMatrix sums;
 	int* totals;
 	enum state state;

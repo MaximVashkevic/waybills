@@ -51,7 +51,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 			/*s afsldkkf asdkf jdsa
 			!!!!!!!!!!!!!!
 			*/
-			pSelf->pc = openDB(L"D:\\projects\\course2\\3sem\\coursework\\sqlite-test\\t2.db");
+			//pSelf->pc = openDB(L"D:\\projects\\course2\\3sem\\coursework\\sqlite-test\\t2.db");
 			/*
 			*/
 		}
@@ -109,17 +109,17 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 					switch (pSelf->state)
 					{
 					case sAccounts:
-						deleteFromTable(pSelf->pc, tAccount, pSelf->accounts->data[pSelf->selection.i].id);
+						deleteFromTable(pSelf->pc, tAccount, ((PAccount)pSelf->accounts->data)[pSelf->selection.i].id);
 						LoadAccounts(pSelf);
 						pSelf->selected = FALSE;
 						break;
 					case sDrivers:
-						deleteFromTable(pSelf->pc, tDriver, pSelf->drivers->data[pSelf->selection.i].id);
+						deleteFromTable(pSelf->pc, tDriver, ((PDriver)pSelf->drivers->data)[pSelf->selection.i].id);
 						LoadDrivers(pSelf);
 						pSelf->selected = FALSE;
 						break;
 					case sCars:
-						deleteFromTable(pSelf->pc, tCar, pSelf->cars->data[pSelf->selection.i].id);
+						deleteFromTable(pSelf->pc, tCar, ((PCar)pSelf->cars->data)[pSelf->selection.i].id);
 						LoadCars(pSelf);
 						pSelf->selected = FALSE;
 						break;
@@ -130,7 +130,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				if (pSelf->selected)
 				{
 					pSelf->selected = FALSE;
-					pSelf->driverID = pSelf->drivers->data[pSelf->selection.i].id;
+					pSelf->driverID = ((PDriver)pSelf->drivers->data)[pSelf->selection.i].id;
 					pSelf->state = sEditing;
 					LoadTKM(pSelf);
 					ShowWindow(pSelf->hBtnAdd, SW_HIDE);
@@ -144,9 +144,17 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		{
 		case IDM_OPEN:
 			openDatabase(pSelf->hWnd);
+			if (pSelf->pc)
+			{
+				insertDates(pSelf->pc);
+			}
 			break;
 		case IDM_CREATE:
 			createDatabase(pSelf->hWnd);
+			if (pSelf->pc)
+			{
+				insertDates(pSelf->pc);
+			}
 			break;
 		case IDM_DRIVERS:
 			if (pSelf->state != sDrivers)
@@ -154,9 +162,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				pSelf->selected = FALSE;
 				pSelf->state = sDrivers;
 				if (pSelf->pc)
-					LoadDrivers(pSelf);
-				if (!IsWindowVisible(pSelf->hBtnAdd))
 				{
+					LoadDrivers(pSelf);
 					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
 					ShowWindow(pSelf->hBtnDelete, SW_SHOW);
 					ShowWindow(pSelf->hBtnEdit, SW_SHOW);
@@ -169,9 +176,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				pSelf->selected = FALSE;
 				pSelf->state = sAccounts;
 				if (pSelf->pc)
-					LoadAccounts(pSelf);
-				if (!IsWindowVisible(pSelf->hBtnAdd))
 				{
+					LoadAccounts(pSelf);				
 					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
 					ShowWindow(pSelf->hBtnDelete, SW_SHOW);
 					ShowWindow(pSelf->hBtnEdit, SW_HIDE);
@@ -184,9 +190,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				pSelf->selected = FALSE;
 				pSelf->state = sCars;
 				if (pSelf->pc)
-					LoadCars(pSelf);
-				if (!IsWindowVisible(pSelf->hBtnAdd))
 				{
+					LoadCars(pSelf);
 					ShowWindow(pSelf->hBtnAdd, SW_SHOW);
 					ShowWindow(pSelf->hBtnDelete, SW_SHOW);
 					ShowWindow(pSelf->hBtnEdit, SW_HIDE);
@@ -199,10 +204,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 				pSelf->selected = FALSE;
 				pSelf->state = sReport;
 				if (pSelf->pc)
+				{
 					LoadReport(pSelf);
-				ShowWindow(pSelf->hBtnAdd, SW_HIDE);
-				ShowWindow(pSelf->hBtnDelete, SW_HIDE);
-				ShowWindow(pSelf->hBtnEdit, SW_HIDE);
+					ShowWindow(pSelf->hBtnAdd, SW_HIDE);
+					ShowWindow(pSelf->hBtnDelete, SW_HIDE);
+					ShowWindow(pSelf->hBtnEdit, SW_HIDE);
+				}
 			}
 			break;
 		}
@@ -486,7 +493,7 @@ void LoadDrivers(PMainWindow pSelf)
 
 	for (int i = 0; i < pSelf->drivers->count; i++)
 	{
-		setData(pSelf->tDrivers, i, 0, (pSelf->drivers->data)[i].name, tText);
+		setData(pSelf->tDrivers, i, 0, ((PDriver)pSelf->drivers->data)[i].name, tText);
 	}
 }
 
@@ -506,7 +513,7 @@ void LoadAccounts(PMainWindow pSelf)
 
 	for (int i = 0; i < pSelf->accounts->count; i++)
 	{
-		setData(pSelf->tAccounts, i, 0, (pSelf->accounts->data)[i].name, tText);
+		setData(pSelf->tAccounts, i, 0, ((PAccount)pSelf->accounts->data)[i].name, tText);
 	}
 }
 
@@ -526,7 +533,7 @@ void LoadCars(PMainWindow pSelf)
 
 	for (int i = 0; i < pSelf->cars->count; i++)
 	{
-		setData(pSelf->tCars, i, 0, (pSelf->cars->data)[i].number, tText);
+		setData(pSelf->tCars, i, 0, ((PCar)pSelf->cars->data)[i].number, tText);
 	}
 }
 
@@ -570,27 +577,24 @@ void LoadReport(PMainWindow pSelf)
 	if (pSelf->sums)
 	{
 		pSelf->sums->count = pSelf->drivers->count;
-		pSelf->sums->matrix = (PData*)calloc(pSelf->sums->count, sizeof(PData));
+		pSelf->sums->matrix = (PArray*)calloc(pSelf->sums->count, sizeof(PArray));
 		if (pSelf->sums->matrix && pSelf->totals)
 		{
 			pSelf->totals[pSelf->drivers->count] = getTotalSum(pSelf->pc);
 			setData(pSelf->tReport, 0, pSelf->tReport->colCount - 1, &(pSelf->totals[pSelf->drivers->count]), tInt);
 			for (int i = 0; i < pSelf->drivers->count; i++)
 			{
-				pSelf->sums->matrix[i] = getSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
+				pSelf->sums->matrix[i] = getSumByDriver(pSelf->pc, ((PDriver)pSelf->drivers->data)[i].id);
 				for (int j = 0; j < pSelf->sums->matrix[i]->count; j++)
 				{
-					setData(pSelf->tReport, i + 1, j + 1, &(pSelf->sums->matrix[i]->data[j].sum), tInt);
+					setData(pSelf->tReport, i + 1, j + 1, &(((PDatum)(pSelf->sums->matrix[i]->data))[j].sum), tInt);
 				}
-				pSelf->totals[i] = getTotalSumByDriver(pSelf->pc, pSelf->drivers->data[i].id);
+				pSelf->totals[i] = getTotalSumByDriver(pSelf->pc, ((PDriver)pSelf->drivers->data)[i].id);
 				setData(pSelf->tReport, i + 1, pSelf->tReport->colCount - 1, &(pSelf->totals[i]), tInt);
 
 			}
 		}
-
-	}
-	
-	
+	}	
 }
 
 void LoadTKM(PMainWindow pSelf)

@@ -16,17 +16,11 @@ typedef struct _driver
 	int id;
 	wchar_t* name;
 } TDriver, *PDriver;
-
-typedef struct _drivers
-{
-	PDriver data;
-	int count;
-}TDrivers, *PDrivers;
 typedef struct _waybill
 {
 	int id;
 	int driverID;
-	wchar_t* date;
+	int dateID;
 	int number;
 	int carID;
 } TWaybill, *PWaybill;
@@ -35,12 +29,6 @@ typedef struct _account
 	int id;
 	wchar_t* name;
 } TAccount, *PAccount;
-typedef struct _accounts
-{
-	PAccount data;
-	int count;
-} TAccounts, * PAccounts;
-
 typedef struct _TKM
 {
 	int id;
@@ -53,51 +41,54 @@ typedef struct _car
 	int id;
 	wchar_t* number;
 } TCar, *PCar;
-typedef struct _cars
-{
-	PCar data;
-	int count;
-} TCars, *PCars;
 typedef struct _datum
 {
 	int sum;
 	int id;
 } TDatum, *PDatum;
-typedef struct _data
+typedef struct _array
 {
-	PDatum data;
+	void * data;
 	int count;
-} TData, *PData;
+} TArray, *PArray;
 typedef struct _matrix
 {
-	PData* matrix;
+	PArray* matrix;
 	int count;
 } TMatrix, *PMatrix;
+typedef struct _date
+{
+	int id;
+	int day;
+	wchar_t* date;
+} TDate, *PDate;
+//typedef struct 
 
 PConnection openDB(const wchar_t* filename);
 PConnection createDB(const wchar_t* filename);
 void closeDB(PConnection pc);
 
+void insertDates(PConnection pc);
 int addDriver(PConnection pc, wchar_t* name);
 int addCar(PConnection pc, wchar_t* number);
-int addWaybill(PConnection pc, int driverID, wchar_t* date, int number, int carID);
+int addWaybill(PConnection pc, int driverID, int dateID, int number, int carID);
 int addAccount(PConnection pc, wchar_t* TAccount);
 int addTKM(PConnection pc, int waybillID, int subaccountID, int amount);
 
-PDrivers getDrivers(PConnection pc);
-void freeDrivers(PDrivers drivers);
+PArray getDrivers(PConnection pc);
+void freeDrivers(PArray drivers);
 
-PAccounts getAccounts(PConnection pc);
-void freeAccounts(PAccounts accounts);
+PArray getAccounts(PConnection pc);
+void freeAccounts(PArray accounts);
 
-PCars getCars(PConnection pc);
-void freeCars(PCars cars);
+PArray getCars(PConnection pc);
+void freeCars(PArray cars);
 
 
-PData getSumByDriver(PConnection pc, int driverID);
+PArray getSumByDriver(PConnection pc, int driverID);
 int getTotalSumByDriver(PConnection pc, int driverID);
 int getTotalSum(PConnection pc);
-void freeData(PData data);
+void freeData(PArray data);
 
 
 
