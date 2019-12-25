@@ -38,9 +38,12 @@
 
 #define INV_POS 0xFFFFFFFF
 
-const WCHAR* const ADD_TEXT = L"Добавить";
-const WCHAR* const OK_TEXT = L"OK";
-const WCHAR* const CANCEL_TEXT = L"Отмена";
+const LPWSTR const ADD_TEXT = L"Добавить";
+const LPWSTR const OK_TEXT = L"OK";
+const LPWSTR const CANCEL_TEXT = L"Отмена";
+const LPWSTR const lpszClassName = L"MainWindowClass";
+const LPWSTR const CarLabel = L"Машина";
+const LPWSTR const DateLabel = L"Дата";
 
 enum state {
 	sEmpty, sDrivers, sAccounts, sCars, sReport, sEditing
@@ -60,7 +63,7 @@ typedef struct _TMainWindow
 	HWND hComboBox;
 	PConnection pc;
 	PArray drivers, accounts, cars, days, waybills;
-	PMatrix sums;
+	PMatrix sums, tkm;
 	int* totals;
 	enum state state;
 	PTable tDrivers, tAccounts, tTkm, tCars, tReport;
@@ -85,4 +88,5 @@ void LoadTKMData(PMainWindow pSelf);
 LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
 TSelection getSelection(PTable t, int x, int y);
 
+int getIFromCarID(PMainWindow pSelf, int carID);
 void onComboboxDeselect(PMainWindow pSelf);

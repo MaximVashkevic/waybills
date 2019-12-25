@@ -5,9 +5,6 @@
 #include <strsafe.h>
 #include <malloc.h>
 extern freeAndNULL(void * p);
-const wchar_t* const lpszClassName = L"MainWindowClass";
-const wchar_t* const CarLabel = L"Машина";
-const wchar_t* const DateLabel = L"Дата";
 
 void ShowEdit(int x, int y, HWND hWnd)
 {
@@ -23,7 +20,7 @@ void hideControls(PMainWindow pSelf)
 	ShowWindow(pSelf->hEdit, SW_HIDE);
 }
 
-void openClick(PMainWindow pSelf)
+void onOpenClick(PMainWindow pSelf)
 {
 	openDatabase(pSelf->hWnd);
 	hideControls(pSelf);
@@ -44,7 +41,7 @@ void setCombobox(PMainWindow pSelf)
 		SendMessage(pSelf->hComboBox, (UINT)CB_ADDSTRING, (WPARAM)0, (LPARAM)((PCar)pSelf->cars->data)[i].number);
 	}
 }
-void createClick(PMainWindow pSelf)
+void onCreateClick(PMainWindow pSelf)
 {
 	createDatabase(pSelf->hWnd);
 	hideControls(pSelf);
@@ -55,7 +52,7 @@ void createClick(PMainWindow pSelf)
 	}
 }
 
-void driversClick(PMainWindow pSelf)
+void onDriversClick(PMainWindow pSelf)
 {
 	if (pSelf->state != sDrivers)
 	{
@@ -72,7 +69,7 @@ void driversClick(PMainWindow pSelf)
 	}
 }
 
-void accountsClick(PMainWindow pSelf)
+void onAccountsClick(PMainWindow pSelf)
 {
 	if (pSelf->state != sAccounts)
 	{
@@ -88,7 +85,7 @@ void accountsClick(PMainWindow pSelf)
 	}
 }
 
-void carsClick(PMainWindow pSelf)
+void onCarsClick(PMainWindow pSelf)
 {
 	if (pSelf->state != sCars)
 	{
@@ -104,7 +101,7 @@ void carsClick(PMainWindow pSelf)
 	}
 }
 
-void reportClick(PMainWindow pSelf)
+void onReportClick(PMainWindow pSelf)
 {
 	if (pSelf->state != sReport)
 	{
@@ -118,7 +115,7 @@ void reportClick(PMainWindow pSelf)
 	}
 }
 
-void editingClick(PMainWindow pSelf, LPARAM lParam)
+void onClickEditing(PMainWindow pSelf, LPARAM lParam)
 {	
 	TSelection prevSelection = pSelf->selection;
 	pSelf->selection = getSelection(pSelf->tTkm, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
@@ -137,7 +134,14 @@ void editingClick(PMainWindow pSelf, LPARAM lParam)
 		else
 		{
 			onComboboxDeselect(pSelf, prevSelection);
-			SetWindowPos(pSelf->hEdit, HWND_TOP, 100 + (pSelf->selection.col - 1) * COL_WIDTH, pSelf->selection.row * ROW_HEIGTH, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+			if (((PWaybill*)pSelf->waybills->data)[pSelf->selection.row - 1])
+			{
+				SetWindowPos(pSelf->hEdit, HWND_TOP, 100 + (pSelf->selection.col - 1) * COL_WIDTH, pSelf->selection.row * ROW_HEIGTH, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+			}
+			else
+			{
+				ShowWindow(pSelf->hEdit, SW_HIDE);
+			}
 		}			
 	}
 	else
@@ -149,7 +153,7 @@ void editingClick(PMainWindow pSelf, LPARAM lParam)
 	
 }
 
-void lmButtonClick(PMainWindow pSelf, LPARAM lParam)
+void onLMButtonClick(PMainWindow pSelf, LPARAM lParam)
 {
 	switch (pSelf->state)
 	{
@@ -169,7 +173,7 @@ void lmButtonClick(PMainWindow pSelf, LPARAM lParam)
 		break;
 	}
 	case sEditing:
-		editingClick(pSelf, lParam);
+		onClickEditing(pSelf, lParam);
 		break;
 	}
 }
@@ -179,7 +183,8 @@ void onComboboxDeselect(PMainWindow pSelf, TSelection prevSelection)
 	int i = SendMessage(pSelf->hComboBox, (UINT)CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
 	if (i != CB_ERR && prevSelection.selected)
 	{
-		addWaybill(pSelf->pc, pSelf->driverID, ((PDate)pSelf->days->data)[prevSelection.row - 1].id, 0, ((PCar)pSelf->cars->data)[i - 1].id);
+		int carid = ((PCar)pSelf->cars->data)[i].id;
+		addWaybill(pSelf->pc, pSelf->driverID, ((PDate)pSelf->days->data)[prevSelection.row - 1].id, 0, carid);
 	}
 	SendMessage(pSelf->hComboBox, (UINT)CB_SETCURSEL, (WPARAM)-1, (LPARAM)0);
 	LoadTKMData(pSelf);
@@ -303,7 +308,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		HeapFree(GetProcessHeap(), 0, pSelf);
 		return 0;
 	case WM_PAINT:
-		Paint(hWnd);
+		onPaint(hWnd);
 		break;
 	case WM_COMMAND:
 		if (HIWORD(wParam) == BN_CLICKED)
@@ -330,28 +335,28 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		switch (LOWORD(wParam))
 		{
 		case IDM_OPEN:
-			openClick(pSelf);
+			onOpenClick(pSelf);
 			break;
 		case IDM_CREATE:
-			createClick(pSelf);
+			onCreateClick(pSelf);
 			break;
 		case IDM_DRIVERS:
-			driversClick(pSelf);
+			onDriversClick(pSelf);
 			break;
 		case IDM_ACCOUNTS:
-			accountsClick(pSelf);
+			onAccountsClick(pSelf);
 			break;
 		case IDM_CARS:
-			carsClick(pSelf);
+			onCarsClick(pSelf);
 			break;
 		case IDM_REPORT:
-			reportClick(pSelf);
+			onReportClick(pSelf);
 			break;
 		}
 		InvalidateRect(pSelf->hWnd, NULL, TRUE);
 		break;
 	case WM_LBUTTONDOWN:
-		lmButtonClick(pSelf, lParam);
+		onLMButtonClick(pSelf, lParam);
 		InvalidateRect(hWnd, NULL, TRUE);
 		break;
 	}
@@ -494,7 +499,7 @@ void createDatabase(HWND hWnd)
 void PrintTable(PMainWindow pSelf, HDC hdc, PTable t)
 {
 	int x, y;
-	size_t* pcch = malloc(sizeof(size_t));
+	size_t* pcch = calloc(1, sizeof(size_t));
 	LPWSTR s = NULL;
 	int* num;
 	if (t)
@@ -517,7 +522,7 @@ void PrintTable(PMainWindow pSelf, HDC hdc, PTable t)
 					s = (LPWSTR)getData(t, i, j);
 					break;
 				case tInt:
-					s = malloc(STRBUF_MAX_SIZE * sizeof(WCHAR));
+					s = calloc(STRBUF_MAX_SIZE, sizeof(WCHAR));
 					if (s)
 					{
 						num = (int*)(getData(t, i, j));
@@ -546,7 +551,7 @@ void PrintTable(PMainWindow pSelf, HDC hdc, PTable t)
 	freeAndNULL(pcch);
 }
 
-void Paint(HWND hWnd)
+void onPaint(HWND hWnd)
 {
 	HDC hdc;
 	RECT rc;
@@ -696,6 +701,18 @@ void LoadReport(PMainWindow pSelf)
 	}	
 }
 
+int getIFromCarID(PMainWindow pSelf, int carID)
+{
+	for (int i = 0; i < pSelf->cars->count; i++)
+	{
+		if (((PCar)pSelf->cars->data)[i].id == carID)
+		{
+			return i;
+		}
+	}
+	return 0xFFFFFFFF;
+}
+
 void LoadTKMData(PMainWindow pSelf)
 {
 	int i;
@@ -740,7 +757,11 @@ void LoadTKMData(PMainWindow pSelf)
 		((PWaybill*)pSelf->waybills->data)[i] = getWaybill(pSelf->pc, pSelf->driverID, ((PDate)pSelf->days->data)[i].id);
 		if (((PWaybill*)pSelf->waybills->data)[i])
 		{
-			setData(pSelf->tTkm, i + 1, 1, ((PCar)pSelf->cars->data)[((PWaybill*)pSelf->waybills->data)[i]->carID].number, tText);
+			int carID = ((PWaybill*)pSelf->waybills->data)[i]->carID;
+			int id = getIFromCarID(pSelf, carID);
+			LPWSTR s = ((PCar)pSelf->cars->data)[id].number;
+			setData(pSelf->tTkm, i + 1, 1, s, tText);
+
 		}
 	}
 	for (i = 0; i < pSelf->accounts->count; i++)
