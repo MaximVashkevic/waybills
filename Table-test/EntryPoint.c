@@ -4,7 +4,7 @@
 #include "resource.h"
 #include <strsafe.h>
 #include <malloc.h>
-extern freeAndNULL(void * p);
+extern freeAndNULL(void* p);
 
 void ShowEdit(int x, int y, HWND hWnd)
 {
@@ -115,8 +115,22 @@ void onReportClick(PMainWindow pSelf)
 	}
 }
 
-void onClickEditing(PMainWindow pSelf, LPARAM lParam)
+void onEditDeselect(PMainWindow pSelf, TSelection prevSelection)
 {	
+	WCHAR s[STRBUF_MAX_SIZE];
+	if (GetWindowText(pSelf->hEdit, s, STRBUF_MAX_SIZE))
+	{
+		int waybillID = ((PWaybill*)(pSelf->waybills->data))[prevSelection.row - 1]->id;
+		int amount = wcstol(s, NULL, 10);
+		int accountID = ((PAccount)pSelf->accounts->data)[prevSelection.col - 2].id;
+		addTKM(pSelf->pc, waybillID, accountID, amount);
+	}
+	SetWindowText(pSelf->hEdit, L"");
+	LoadTKMData(pSelf);
+	ShowWindow(pSelf->hEdit, SW_HIDE);
+}
+void onClickEditing(PMainWindow pSelf, LPARAM lParam)
+{
 	TSelection prevSelection = pSelf->selection;
 	pSelf->selection = getSelection(pSelf->tTkm, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 	if (pSelf->selection.selected)
@@ -125,32 +139,34 @@ void onClickEditing(PMainWindow pSelf, LPARAM lParam)
 		{
 			ShowWindow(pSelf->hComboBox, SW_HIDE);
 			onComboboxDeselect(pSelf, prevSelection);
+			onEditDeselect(pSelf, prevSelection);
+
 		}
 		else if (pSelf->selection.col == 1)
 		{
 			SetWindowPos(pSelf->hComboBox, HWND_TOP, 100, pSelf->selection.row * ROW_HEIGTH, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 			ShowWindow(pSelf->hEdit, SW_HIDE);
+			onEditDeselect(pSelf, prevSelection);
+
 		}
 		else
 		{
 			onComboboxDeselect(pSelf, prevSelection);
+			onEditDeselect(pSelf, prevSelection);
 			if (((PWaybill*)pSelf->waybills->data)[pSelf->selection.row - 1])
 			{
 				SetWindowPos(pSelf->hEdit, HWND_TOP, 100 + (pSelf->selection.col - 1) * COL_WIDTH, pSelf->selection.row * ROW_HEIGTH, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 			}
-			else
-			{
-				ShowWindow(pSelf->hEdit, SW_HIDE);
-			}
-		}			
+		}
 	}
 	else
 	{
 		ShowWindow(pSelf->hComboBox, SW_HIDE);
 		ShowWindow(pSelf->hEdit, SW_HIDE);
 		onComboboxDeselect(pSelf, prevSelection);
+		onEditDeselect(pSelf, prevSelection);
 	}
-	
+
 }
 
 void onLMButtonClick(PMainWindow pSelf, LPARAM lParam)
@@ -226,7 +242,7 @@ void onAddClick(PMainWindow pSelf)
 			LoadCars(pSelf);
 			break;
 		}
-		freeAndNULL(s);
+		freeAndNULL(&s);
 	}
 }
 
@@ -417,7 +433,7 @@ PWSTR OpenDialog(HWND hWnd)
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 		if (GetOpenFileName(&ofn) != TRUE)
 		{
-			freeAndNULL(lpszFile);
+			freeAndNULL(&lpszFile);
 			lpszFile = NULL;
 		}
 	}
@@ -449,7 +465,7 @@ PWSTR SaveDialog(HWND hWnd)
 
 		if (GetSaveFileName(&sfn) != TRUE)
 		{
-			freeAndNULL(lpszFile);
+			freeAndNULL(&lpszFile);
 			lpszFile = NULL;
 		}
 	}
@@ -471,7 +487,7 @@ void openDatabase(HWND hWnd)
 				closeDB(pSelf->pc);
 			}
 			pSelf->pc = openDB(filename);
-			freeAndNULL(filename);
+			freeAndNULL(&filename);
 		}
 	}
 }
@@ -491,7 +507,7 @@ void createDatabase(HWND hWnd)
 				closeDB(pSelf->pc);
 			}
 			pSelf->pc = createDB(filename);
-			freeAndNULL(filename);
+			freeAndNULL(&filename);
 		}
 	}
 }
@@ -541,14 +557,14 @@ void PrintTable(PMainWindow pSelf, HDC hdc, PTable t)
 				}
 				if (getDataType(t, i, j) == tInt && s)
 				{
-					freeAndNULL(s);
+					freeAndNULL(&s);
 				}
 				x += t->colWidths[j];
 			}
 			y += t->rowHeight;
 		}
 	}
-	freeAndNULL(pcch);
+	freeAndNULL(&pcch);
 }
 
 void onPaint(HWND hWnd)
@@ -668,13 +684,13 @@ void LoadReport(PMainWindow pSelf)
 			{
 				freeData(pSelf->sums->matrix[i]);
 			}
-			freeAndNULL(pSelf->sums->matrix);
+			freeAndNULL(&(pSelf->sums->matrix));
 		}
-		freeAndNULL(pSelf->sums);
+		freeAndNULL(&(pSelf->sums));
 	}
 	if (pSelf->totals)
 	{
-		freeAndNULL(pSelf->totals);
+		freeAndNULL(&(pSelf->totals));
 	}
 	pSelf->totals = (int*)calloc(pSelf->drivers->count + 1, sizeof(int));
 	pSelf->sums = (PMatrix)calloc(1, sizeof(TMatrix));
@@ -698,7 +714,7 @@ void LoadReport(PMainWindow pSelf)
 
 			}
 		}
-	}	
+	}
 }
 
 int getIFromCarID(PMainWindow pSelf, int carID)
@@ -713,9 +729,21 @@ int getIFromCarID(PMainWindow pSelf, int carID)
 	return 0xFFFFFFFF;
 }
 
+int getIFromAccountID(PMainWindow pSelf, int accountID)
+{
+	for (int i = 0; i < pSelf->accounts->count; i++)
+	{
+		if (((PAccount)pSelf->accounts->data)[i].id == accountID)
+		{
+			return i;
+		}
+	}
+	return 0xFFFFFFFF;
+}
+
 void LoadTKMData(PMainWindow pSelf)
 {
-	int i;
+	int i, j;
 	LoadAccounts(pSelf);
 	if (pSelf->days)
 	{
@@ -736,11 +764,11 @@ void LoadTKMData(PMainWindow pSelf)
 		{
 			for (i = 0; i < pSelf->waybills->count; i++)
 			{
-				freeAndNULL(((PWaybill*)pSelf->waybills->data)[i]);
+				freeAndNULL(&(((PWaybill*)pSelf->waybills->data)[i]));
 			}
-			freeAndNULL(pSelf->waybills->data);
+			freeAndNULL(&(pSelf->waybills->data));
 		}
-		freeAndNULL(pSelf->waybills);
+		freeAndNULL(&(pSelf->waybills));
 
 	}
 	pSelf->waybills = (PArray)calloc(1, sizeof(TArray));
@@ -751,23 +779,60 @@ void LoadTKMData(PMainWindow pSelf)
 			pSelf->waybills->data = (PWaybill*)calloc(pSelf->waybills->count, sizeof(PWaybill));
 		}
 	}
-
-	for (i = 0; i < pSelf->days->count; i++) {
-		setData(pSelf->tTkm, i + 1, 0, ((PDate)pSelf->days->data)[i].date, tText);
-		((PWaybill*)pSelf->waybills->data)[i] = getWaybill(pSelf->pc, pSelf->driverID, ((PDate)pSelf->days->data)[i].id);
-		if (((PWaybill*)pSelf->waybills->data)[i])
+	if (pSelf->tkm)
+	{
+		if (pSelf->tkm->matrix)
 		{
-			int carID = ((PWaybill*)pSelf->waybills->data)[i]->carID;
-			int id = getIFromCarID(pSelf, carID);
-			LPWSTR s = ((PCar)pSelf->cars->data)[id].number;
-			setData(pSelf->tTkm, i + 1, 1, s, tText);
+			for (i = 0; i < pSelf->tkm->count; i++)
+			{
+				freeData(pSelf->tkm->matrix[i]);
+			}
+			freeAndNULL(&(pSelf->tkm->matrix));
+		}
+		freeAndNULL(&(pSelf->tkm));
+	}
+
+	pSelf->tkm = (PMatrix)calloc(1, sizeof(TMatrix));
+	if (pSelf->tkm)
+	{
+		pSelf->tkm->count = pSelf->days->count;
+		pSelf->tkm->matrix = (PArray*)calloc(pSelf->tkm->count, sizeof(PArray));
+		if (pSelf->tkm->matrix && pSelf->waybills)
+		{
+			for (i = 0; i < pSelf->days->count; i++) {
+				setData(pSelf->tTkm, i + 1, 0, ((PDate)pSelf->days->data)[i].date, tText);
+				((PWaybill*)pSelf->waybills->data)[i] = getWaybill(pSelf->pc, pSelf->driverID, ((PDate)pSelf->days->data)[i].id);
+				if (((PWaybill*)pSelf->waybills->data)[i])
+				{
+					int carID = ((PWaybill*)pSelf->waybills->data)[i]->carID;
+					int id = getIFromCarID(pSelf, carID);
+					LPWSTR s = ((PCar)pSelf->cars->data)[id].number;
+					setData(pSelf->tTkm, i + 1, 1, s, tText);
+					
+					pSelf->tkm->matrix[i] = getTKM(pSelf->pc, ((PWaybill*)pSelf->waybills->data)[i]->dateID, pSelf->driverID);
+					
+					if (pSelf->tkm->matrix[i])
+					{
+						for (j = 0; j < pSelf->tkm->matrix[i]->count; j++)
+						{
+							int accountID = ((PTKM)pSelf->tkm->matrix[i]->data)[j].accountID;
+							int id = getIFromAccountID(pSelf, accountID) + 2;
+							int* in = &(((PTKM)pSelf->tkm->matrix[i]->data)[j].amount);
+							setData(pSelf->tTkm, i + 1, id, in, tInt);
+						}
+					}
+					
+				}
+			}
+			for (i = 0; i < pSelf->accounts->count; i++)
+			{
+				setData(pSelf->tTkm, 0, i + 2, ((PAccount)pSelf->accounts->data)[i].name, tText);
+			}
 
 		}
+
 	}
-	for (i = 0; i < pSelf->accounts->count; i++)
-	{
-		setData(pSelf->tTkm, 0, i + 2, ((PAccount)pSelf->accounts->data)[i].name, tText);
-	}
+
 }
 void LoadTKM(PMainWindow pSelf)
 {
@@ -800,7 +865,7 @@ BOOL DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				if (!GetDlgItemText(hwndDlg, ID_TEXT, result, STRBUF_MAX_SIZE))
 				{
-					freeAndNULL(result);
+					freeAndNULL(&result);
 					result = 0;
 				}
 			}
@@ -934,7 +999,7 @@ TSelection getSelection(PTable t, int x0, int y0)
 			}
 			if (j <= t->colCount)
 			{
-				return (TSelection) { i, j - 1, TRUE};
+				return (TSelection) { i, j - 1, TRUE };
 			}
 		}
 	}

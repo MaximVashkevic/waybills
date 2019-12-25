@@ -32,8 +32,7 @@ typedef struct _account
 typedef struct _TKM
 {
 	int id;
-	int waybillID;
-	int subaccountID;
+	int accountID;
 	int amount;
 } TTKM, *PTKM;
 typedef struct _car
@@ -73,7 +72,7 @@ int addDriver(PConnection pc, wchar_t* name);
 int addCar(PConnection pc, wchar_t* number);
 int addWaybill(PConnection pc, int driverID, int dateID, int number, int carID);
 int addAccount(PConnection pc, wchar_t* TAccount);
-int addTKM(PConnection pc, int waybillID, int subaccountID, int amount);
+int addTKM(PConnection pc, int waybillID, int accountID, int amount);
 
 PArray getDrivers(PConnection pc);
 void freeDrivers(PArray drivers);
@@ -91,7 +90,7 @@ int getTotalSumByDriver(PConnection pc, int driverID);
 int getTotalSum(PConnection pc);
 void freeData(PArray data);
 
-PMatrix getTKM(PConnection pc);
+PArray getTKM(PConnection pc, int dateID, int driverID);
 void freeTKM(PConnection pc, PMatrix tkm);
 
 PWaybill getWaybill(PConnection pc, int driverID, int dayID);

@@ -32,9 +32,9 @@ PTable createTable(int rows, int columns, int x, int y)
 		else
 		{
 			if (t->cells)
-				freeAndNULL(t->cells);
+				freeAndNULL(&(t->cells));
 			if (t)
-				freeAndNULL(t);
+				freeAndNULL(&t);
 			t = NULL;
 		}
 	}
@@ -46,10 +46,10 @@ void freeTable(PTable table)
 	if (table)
 	{
 		if (table->colWidths)
-			freeAndNULL(table->colWidths);
+			freeAndNULL(&(table->colWidths));
 		if (table->cells)
-			freeAndNULL(table->cells);
-		freeAndNULL(table);
+			freeAndNULL(&(table->cells));
+		freeAndNULL(&table);
 	}
 }
 

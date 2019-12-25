@@ -89,4 +89,4 @@ LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
 TSelection getSelection(PTable t, int x, int y);
 
 int getIFromCarID(PMainWindow pSelf, int carID);
-void onComboboxDeselect(PMainWindow pSelf);
+void onComboboxDeselect(PMainWindow pSelf, TSelection prevSelection);

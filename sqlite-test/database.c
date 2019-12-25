@@ -47,7 +47,7 @@ const char* const ADD_DRIVER_QUERY = "INSERT INTO Drivers(Name) VALUES(:Name);";
 const char* const ADD_CAR_QUERY = "INSERT INTO Cars(Number) VALUES(:Number);";
 const char* const ADD_WAYBILL_QUERY = "INSERT INTO Waybills(DriverID, DateID, Number, CarID) VALUES(:DriverID, :DateID, :Number, :CarID);";
 const char* const ADD_ACCOUNT_QUERY = "INSERT INTO Accounts(Account) VALUES(:Account);";
-const char* const ADD_TKM_QUERY = "INSERT INTO TKM(WaybillID, SubaccountID, Amount) VALUES(:WaybillID, :SubaccountID, :Amount);";
+const char* const ADD_TKM_QUERY = "INSERT INTO TKM(WaybillID, AccountID, Amount) VALUES(:WaybillID, :AccountID, :Amount);";
 
 const char* const BEGIN_TRANSACTION_QUERY = "BEGIN TRANSACTION;";
 const char* const COMMIT_QUERY = "COMMIT;";
@@ -64,6 +64,8 @@ const char* const GET_CARS_QUERY = "SELECT * FROM Cars;";
 
 const char* const GET_WAYBILL_QUERY = "SELECT * FROM Waybills WHERE DriverID = :DriverID AND DateID = :DateID;";
 
+const char* const GET_TKM_BY_DATE_QUERY = "SELECT TKM.ID, AccountID, Amount FROM TKM INNER JOIN Waybills ON Waybills.ID = TKM.WaybillID WHERE Waybills.DateID = :DateID AND Waybills.DriverID = :DriverID;";
+const char* const COUNT_TKM_QUERY = "SELECT COUNT() FROM TKM INNER JOIN Waybills ON Waybills.ID = TKM.WaybillID WHERE Waybills.DateID = :DateID AND Waybills.DriverID = :DriverID;";
 const char* const GET_SUM_BY_DRIVER_QUERY = "SELECT TKM.AccountID, SUM(TKM.Amount) from TKM INNER JOIN Waybills ON Waybills.ID = TKM.WaybillID WHERE Waybills.DriverID = :DriverID GROUP BY TKM.AccountID;";
 const char* const GET_TOTAL_SUM_BY_DRIVER_QUERY = "SELECT SUM(TKM.Amount) from TKM INNER JOIN Waybills ON Waybills.ID = TKM.WaybillID WHERE Waybills.DriverID = :DriverID;";
 const char* const GET_TOTAL_SUM = "SELECT SUM(TKM.Amount) from TKM;";
@@ -79,7 +81,7 @@ const char* const INSERT_DATE = "INSERT INTO Calendar(Date) VALUES(DATE('now', '
 
 const char* const DRIVER_ID_NAME = ":DriverID";
 const char* const DAYS_NAME = ":Days";
-const char* const DATE_NAME = ":DateID";
+const char* const DATE_ID_NAME = ":DateID";
 const char* const NUMBER_NAME = ":Number";
 const char* const CAR_ID_NAME = ":CarID";
 const char* const ACCOUNT_NAME = ":Account";
@@ -91,10 +93,10 @@ const char* const AMOUNT_NAME = ":Amount";
 const char* const NAME_NAME = ":Name";
 const char* const ID_NAME = ":ID";
 
-freeAndNULL(void* p)
+freeAndNULL(void** p)
 {
-	free(p);
-	p = NULL;
+	free(*p);
+	*p = NULL;
 }
 
 PConnection openDB(const wchar_t* filename)
@@ -144,7 +146,7 @@ PConnection createDB(const wchar_t* filename)
 void closeDB(PConnection pc)
 {
 	sqlite3_close(pc->db);
-	freeAndNULL(pc);
+	freeAndNULL(&pc);
 }
 
 void insertDates(PConnection pc)
@@ -227,7 +229,7 @@ int addWaybill(PConnection pc, int driverID, int dateID, int number, int carID)
 		if (sqlite3_prepare_v2(pc->db, ADD_WAYBILL_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, DRIVER_ID_NAME), driverID);
-			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, DATE_NAME), dateID);
+			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, DATE_ID_NAME), dateID);
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, NUMBER_NAME), number);
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, CAR_ID_NAME), carID);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
@@ -254,7 +256,7 @@ int addAccount(PConnection pc, wchar_t* TAccount)
 	return result;
 }
 
-int addTKM(PConnection pc, int waybillID, int subaccountID, int amount)
+int addTKM(PConnection pc, int waybillID, int accountID, int amount)
 {
 	sqlite3_stmt* stmt;
 	int result;
@@ -264,7 +266,7 @@ int addTKM(PConnection pc, int waybillID, int subaccountID, int amount)
 		if (sqlite3_prepare_v2(pc->db, ADD_TKM_QUERY, AUTOLENGTH, &stmt, NULL) == SQLITE_OK)
 		{
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, WAYBILL_ID_NAME), waybillID);
-			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, SUBACCOUNT_ID_NAME), subaccountID);
+			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, ACCOUNT_ID_NAME), accountID);
 			sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, AMOUNT_NAME), amount);
 			result = sqlite3_step(stmt) == SQLITE_DONE;
 		}
@@ -312,7 +314,7 @@ PArray getDrivers(PConnection pc)
 				}
 				else
 				{
-					freeAndNULL(result);
+					freeAndNULL(&result);
 					result = NULL;
 				}
 			}
@@ -330,12 +332,12 @@ void freeDrivers(PArray drivers)
 	{
 		for (i = 0; i < drivers->count; i++)
 		{
-			freeAndNULL(((PDriver)(drivers->data))[i].name);
+			freeAndNULL(&(((PDriver)(drivers->data))[i].name));
 		}
 		if (drivers->data)
-			freeAndNULL(drivers->data);
+			freeAndNULL(&(drivers->data));
 	}
-	freeAndNULL(drivers);
+	freeAndNULL(&drivers);
 }
 
 PArray getAccounts(PConnection pc)
@@ -379,7 +381,7 @@ PArray getAccounts(PConnection pc)
 				}
 				else
 				{
-					freeAndNULL(result);
+					freeAndNULL(&result);
 				}
 			}
 		}
@@ -430,7 +432,7 @@ PArray getCars(PConnection pc)
 				}
 				else
 				{
-					freeAndNULL(result);
+					freeAndNULL(&result);
 					result = NULL;
 				}
 			}
@@ -448,12 +450,12 @@ void freeCars(PArray cars)
 	{
 		for (i = 0; i < cars->count; i++)
 		{
-			freeAndNULL(((PCar)(cars->data))[i].number);
+			freeAndNULL(&(((PCar)(cars->data))[i].number));
 		}
 		if (cars->data)
-			freeAndNULL(cars->data);
+			freeAndNULL(&(cars->data));
 	}
-	freeAndNULL(cars);
+	freeAndNULL(&cars);
 }
 
 void freeAccounts(PArray accounts)
@@ -463,12 +465,12 @@ void freeAccounts(PArray accounts)
 	{
 		for (i = 0; i < accounts->count; i++)
 		{
-			freeAndNULL(((PAccount)(accounts->data))[i].name);
+			freeAndNULL(&(((PAccount)(accounts->data))[i].name));
 		}
 		if (accounts->data)
-			freeAndNULL(accounts->data);
+			freeAndNULL(&(accounts->data));
 	}
-	freeAndNULL(accounts);
+	freeAndNULL(&accounts);
 }
 
 PArray getDays(PConnection pc)
@@ -505,15 +507,13 @@ PArray getDays(PConnection pc)
 							}
 							i++;
 						}
-
 					}
 					sqlite3_finalize(stmtGet);
 				}
 				else
 				{
-					freeAndNULL(result);
+					freeAndNULL(&result);
 				}
-
 			}
 		}
 		sqlite3_finalize(stmtCount);
@@ -528,12 +528,12 @@ void freeDays(PArray days)
 	{
 		for (i = 0; i < days->count; i++)
 		{
-			freeAndNULL(((PDate)(days->data))[i].date);
+			freeAndNULL(&(((PDate)(days->data))[i].date));
 		}
 		if (days->data)
-			freeAndNULL(days->data);
+			freeAndNULL(&(days->data));
 	}
-	freeAndNULL(days);
+	freeAndNULL(&days);
 }
 
 PArray getSumByDriver(PConnection pc, int driverID)
@@ -561,6 +561,7 @@ PArray getSumByDriver(PConnection pc, int driverID)
 					if (sqlite3_prepare_v2(pc->db, GET_SUM_BY_DRIVER_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
 					{
 						i = 0;
+						sqlite3_bind_int(stmtGet, sqlite3_bind_parameter_index(stmtGet, DRIVER_ID_NAME), driverID);
 						while (i < count)
 						{
 							if (sqlite3_step(stmtGet) == SQLITE_ROW)
@@ -575,7 +576,7 @@ PArray getSumByDriver(PConnection pc, int driverID)
 				}
 				else
 				{
-					freeAndNULL(result);
+					freeAndNULL(&result);
 					result = NULL;
 				}
 			}
@@ -625,61 +626,75 @@ void freeData(PArray data)
 	if (data)
 	{
 		if (data->data)
-			freeAndNULL(data->data);
-		freeAndNULL(data);
+			freeAndNULL(&(data->data));
+		freeAndNULL(&(data));
 	}
 }
+void a(void* b, const char* s)
+{
+	return;
+}
 
-/*PMatrix getTKM(PConnection pc)
+PArray getTKM(PConnection pc, int dateID, int driverID)
 {
 	sqlite3_stmt* stmtCount, * stmtGet;
 	int count;
 	int i;
 	const wchar_t* name;
-	PMatrix result;
+	PArray result;
 
 	result = (PArray)calloc(1, sizeof(TArray));
 	if (result)
 	{
 		count = 0;
-		sqlite3_exec(pc->db, BEGIN_TRANSACTION_QUERY, NULL, 0, NULL);
-		if (sqlite3_prepare_v2(pc->db, COUNT_ACCOUNTS_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
+		if (sqlite3_prepare_v2(pc->db, COUNT_TKM_QUERY, -1, &stmtCount, NULL) == SQLITE_OK)
 		{
+			sqlite3_bind_int(stmtCount, sqlite3_bind_parameter_index(stmtCount, DATE_ID_NAME), dateID);
+			sqlite3_bind_int(stmtCount, sqlite3_bind_parameter_index(stmtCount, DRIVER_ID_NAME), driverID);
+			sqlite3_trace(pc->db, a, NULL);
 			if (sqlite3_step(stmtCount) == SQLITE_ROW)
 			{
 				count = sqlite3_column_int(stmtCount, 0);
 				result->count = count;
-				result->data = (PDatum)calloc(count, sizeof(TDatum));
+				if (count > 0)
+				{
+					result->data = (PTKM)calloc(count, sizeof(TTKM));
 
-				if (result->data != NULL) {
-					if (sqlite3_prepare_v2(pc->db, GET_SUM_BY_DRIVER_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
-					{
-						i = 0;
-						while (i < count)
+					if (result->data != NULL) {
+						if (sqlite3_prepare_v2(pc->db, GET_TKM_BY_DATE_QUERY, -1, &stmtGet, NULL) == SQLITE_OK)
 						{
-							if (sqlite3_step(stmtGet) == SQLITE_ROW)
+							sqlite3_bind_int(stmtGet, sqlite3_bind_parameter_index(stmtGet, DATE_ID_NAME), dateID);
+							sqlite3_bind_int(stmtGet, sqlite3_bind_parameter_index(stmtGet, DRIVER_ID_NAME), driverID);
+							i = 0;
+							while (i < count)
 							{
-								((PDatum)(result->data))[i].id = sqlite3_column_int(stmtGet, 0);
-								((PDatum)(result->data))[i].sum = sqlite3_column_int(stmtGet, 1);
+								if (sqlite3_step(stmtGet) == SQLITE_ROW)
+								{
+									((PTKM)(result->data))[i].id = sqlite3_column_int(stmtGet, 0);
+									((PTKM)(result->data))[i].accountID = sqlite3_column_int(stmtGet, 1);
+									((PTKM)(result->data))[i].amount = sqlite3_column_int(stmtGet, 2);
+								}
+								i++;
 							}
-							i++;
 						}
+						sqlite3_finalize(stmtGet);
 					}
-					sqlite3_finalize(stmtGet);
+					else
+					{
+						freeAndNULL(&result);
+					}
 				}
 				else
 				{
-					freeAndNULL(result);
-					result = NULL;
+					freeAndNULL(&result);
 				}
 			}
 		}
 		sqlite3_finalize(stmtCount);
-		sqlite3_exec(pc->db, COMMIT_QUERY, NULL, 0, NULL);
 	}
 	return result;
 }
-*/
+
 PWaybill getWaybill(PConnection pc, int driverID, int dayID)
 {
 	sqlite3_stmt* stmtGet;
@@ -692,7 +707,7 @@ PWaybill getWaybill(PConnection pc, int driverID, int dayID)
 	if (sqlite3_prepare_v2(pc->db, GET_WAYBILL_QUERY, AUTOLENGTH, &stmtGet, NULL) == SQLITE_OK)
 	{
 		sqlite3_bind_int(stmtGet, sqlite3_bind_parameter_index(stmtGet, DRIVER_ID_NAME), driverID);
-		sqlite3_bind_int(stmtGet, sqlite3_bind_parameter_index(stmtGet, DATE_NAME), dayID);
+		sqlite3_bind_int(stmtGet, sqlite3_bind_parameter_index(stmtGet, DATE_ID_NAME), dayID);
 		if (sqlite3_step(stmtGet) == SQLITE_ROW)
 		{
 			result = (PWaybill)calloc(1, sizeof(TWaybill));
