@@ -8,6 +8,7 @@
 #define IDC_BTN_DELETE (HMENU)101
 #define IDC_BTN_EDIT	(HMENU)102
 #define IDC_EDIT	(HMENU)103
+#define IDC_COMBOBOX (HMENU)104
 #define ID_TEXT 200
 
 #define BACK_COLOR RGB(173, 216, 230)
@@ -32,6 +33,9 @@
 
 #define DY_TABLE 20
 
+#define WIN_SIZE_X 1280
+#define WIN_SIZE_Y 1280
+
 #define INV_POS 0xFFFFFFFF
 
 const WCHAR* const ADD_TEXT = L"Добавить";
@@ -41,11 +45,11 @@ const WCHAR* const CANCEL_TEXT = L"Отмена";
 enum state {
 	sEmpty, sDrivers, sAccounts, sCars, sReport, sEditing
 };
-typedef struct _tpos
+typedef struct _tselection
 {
-	int i;
-	int j;
-} TPos, *PPos;
+	int row, col;
+	BOOL selected;
+} TSelection, *PSelection;
 typedef struct _TMainWindow
 {
 	HWND hWnd;
@@ -55,13 +59,12 @@ typedef struct _TMainWindow
 	HWND hEdit;
 	HWND hComboBox;
 	PConnection pc;
-	PArray drivers, accounts, cars;
+	PArray drivers, accounts, cars, days, waybills;
 	PMatrix sums;
 	int* totals;
 	enum state state;
 	PTable tDrivers, tAccounts, tTkm, tCars, tReport;
-	TPos selection;
-	BOOL selected;	
+	TSelection selection;
 	int driverID;
 } TMainWindow, * PMainWindow;
 
@@ -78,5 +81,8 @@ void LoadAccounts(PMainWindow pSelf);
 void LoadCars(PMainWindow pSelf);
 void LoadReport(PMainWindow pSelf);
 void LoadTKM(PMainWindow pSelf);
+void LoadTKMData(PMainWindow pSelf);
 LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
-TPos getID(PTable t, int x, int y);
+TSelection getSelection(PTable t, int x, int y);
+
+void onComboboxDeselect(PMainWindow pSelf);

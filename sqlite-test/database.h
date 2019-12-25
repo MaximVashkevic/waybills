@@ -84,13 +84,18 @@ void freeAccounts(PArray accounts);
 PArray getCars(PConnection pc);
 void freeCars(PArray cars);
 
-
+PArray getDays(PConnection pc);
+void freeDays(PArray days);
 PArray getSumByDriver(PConnection pc, int driverID);
 int getTotalSumByDriver(PConnection pc, int driverID);
 int getTotalSum(PConnection pc);
 void freeData(PArray data);
 
+PMatrix getTKM(PConnection pc);
+void freeTKM(PConnection pc, PMatrix tkm);
 
+PWaybill getWaybill(PConnection pc, int driverID, int dayID);
+void freeWaybills(PC);
 
 int deleteFromTable(PConnection pc, enum tableType type, int id);
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
 #define COL_WIDTH 100
-#define ROW_HEIGTH 20
+#define ROW_HEIGTH 25
 #define STRBUF_MAX_SIZE 260
 enum type {
 	tText, tInt, tFloat
