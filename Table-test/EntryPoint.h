@@ -75,7 +75,7 @@ void openDatabase(HWND hWnd);
 void createDatabase(HWND hWnd);
 PWSTR OpenDialog(HWND hWnd);
 PWSTR SaveDialog(HWND hWnd);
-void Paint(HWND hWnd);
+void onPaint(HWND hWnd);
 void LoadDrivers(PMainWindow pSelf);
 void LoadAccounts(PMainWindow pSelf);
 void LoadCars(PMainWindow pSelf);

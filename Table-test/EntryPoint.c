@@ -186,6 +186,84 @@ void onComboboxDeselect(PMainWindow pSelf, TSelection prevSelection)
 	ShowWindow(pSelf->hComboBox, SW_HIDE);
 }
 
+void InitializeWindow(PMainWindow pSelf)
+{
+	pSelf->hBtnAdd = CreateWindowEx(0, L"BUTTON", L"Добавить", WS_CHILD | BS_PUSHBUTTON,
+		0, 0, 100, 20, pSelf->hWnd, IDC_BTN_ADD, 0, NULL);
+	pSelf->hBtnDelete = CreateWindowEx(0, L"BUTTON", L"Удалить", WS_CHILD | BS_PUSHBUTTON,
+		105, 0, 100, 20, pSelf->hWnd, IDC_BTN_DELETE, 0, NULL);
+	pSelf->hComboBox = CreateWindowEx(0, WC_COMBOBOX, L"", CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED, 0, 0, COL_WIDTH, 200,
+		pSelf->hWnd, IDC_COMBOBOX, 0, NULL);
+	pSelf->hEdit = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | ES_AUTOHSCROLL,
+		120, 0, COL_WIDTH, ROW_HEIGTH, pSelf->hWnd, IDC_EDIT, 0, NULL);
+	pSelf->hBtnEdit = CreateWindowEx(0, L"BUTTON", L"Редактировать", WS_CHILD | BS_PUSHBUTTON,
+		210, 0, 150, 20, pSelf->hWnd, IDC_BTN_EDIT, 0, NULL);
+	pSelf->state = sEmpty;
+}
+
+void onAddClick(PMainWindow pSelf)
+{
+	LPWSTR s = (LPWSTR)Disp((HINSTANCE)GetWindowLong(pSelf->hWnd, GWL_HINSTANCE), pSelf->hWnd, L"");
+	if (s)
+	{
+		switch (pSelf->state)
+		{
+		case sAccounts:
+			addAccount(pSelf->pc, s);
+			LoadAccounts(pSelf);
+			break;
+		case sDrivers:
+			addDriver(pSelf->pc, s);
+			LoadDrivers(pSelf);
+			break;
+		case sCars:
+			addCar(pSelf->pc, s);
+			LoadCars(pSelf);
+			break;
+		}
+		freeAndNULL(s);
+	}
+}
+
+void onDeleteClick(PMainWindow pSelf)
+{
+	if (pSelf->selection.selected)
+	{
+		switch (pSelf->state)
+		{
+		case sAccounts:
+			deleteFromTable(pSelf->pc, tAccount, ((PAccount)pSelf->accounts->data)[pSelf->selection.row].id);
+			LoadAccounts(pSelf);
+			pSelf->selection.selected = FALSE;
+			break;
+		case sDrivers:
+			deleteFromTable(pSelf->pc, tDriver, ((PDriver)pSelf->drivers->data)[pSelf->selection.row].id);
+			LoadDrivers(pSelf);
+			pSelf->selection.selected = FALSE;
+			break;
+		case sCars:
+			deleteFromTable(pSelf->pc, tCar, ((PCar)pSelf->cars->data)[pSelf->selection.row].id);
+			LoadCars(pSelf);
+			pSelf->selection.selected = FALSE;
+			break;
+		}
+	}
+}
+
+void onEditClick(PMainWindow pSelf)
+{
+	if (pSelf->selection.selected)
+	{
+		pSelf->selection.selected = FALSE;
+		pSelf->driverID = ((PDriver)pSelf->drivers->data)[pSelf->selection.row].id;
+		pSelf->state = sEditing;
+		LoadTKM(pSelf);
+		ShowWindow(pSelf->hBtnAdd, SW_HIDE);
+		ShowWindow(pSelf->hBtnDelete, SW_HIDE);
+		ShowWindow(pSelf->hBtnEdit, SW_HIDE);
+	}
+}
+
 LRESULT CALLBACK WindowProc(HWND hWnd,
 	UINT uMsg,
 	WPARAM wParam,
@@ -198,19 +276,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		if (pSelf)
 		{
 			pSelf->hWnd = hWnd;
-			pSelf->hBtnAdd = CreateWindowEx(0, L"BUTTON", L"Добавить", WS_CHILD | BS_PUSHBUTTON,
-				0, 0, 100, 20, hWnd, IDC_BTN_ADD, 0, NULL);
-			pSelf->hBtnDelete = CreateWindowEx(0, L"BUTTON", L"Удалить", WS_CHILD | BS_PUSHBUTTON,
-				105, 0, 100, 20, hWnd, IDC_BTN_DELETE, 0, NULL);
-			pSelf->hComboBox = CreateWindowEx(0, WC_COMBOBOX, L"", CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED, 0, 0, COL_WIDTH, 200,
-				hWnd, IDC_COMBOBOX, 0, NULL);
-			pSelf->hEdit = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | ES_AUTOHSCROLL,
-				120, 0, COL_WIDTH, ROW_HEIGTH, hWnd, IDC_EDIT, 0, NULL);
-			pSelf->hBtnEdit = CreateWindowEx(0, L"BUTTON", L"Редактировать", WS_CHILD | BS_PUSHBUTTON,
-				210, 0, 150, 20, hWnd, IDC_BTN_EDIT, 0, NULL);
-			pSelf->state = sEmpty;
-			pSelf->pc = NULL;
 			SetWindowLong(hWnd, 0, (LONG)pSelf);
+			InitializeWindow(pSelf);
 
 			/*s afsldkkf asdkf jdsa
 			!!!!!!!!!!!!!!
@@ -240,69 +307,21 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		break;
 	case WM_COMMAND:
 		if (HIWORD(wParam) == BN_CLICKED)
-		{//(HMENU)LOWORD(wParam) == IDC_BTN_ADD &&
+		{
 			switch (LOWORD(wParam))
 			{
 			case IDC_BTN_ADD:
 			{
-				LPWSTR s = (LPWSTR)Disp((HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE), hWnd, L"");
-				if (s)
-				{
-					switch (pSelf->state)
-					{
-					case sAccounts:
-						addAccount(pSelf->pc, s);
-						LoadAccounts(pSelf);
-						break;
-					case sDrivers:
-						addDriver(pSelf->pc, s);
-						LoadDrivers(pSelf);
-						break;
-					case sCars:
-						addCar(pSelf->pc, s);
-						LoadCars(pSelf);
-						break;
-					}
-					freeAndNULL(s);
-				}
+				onAddClick(pSelf);
 				break;
 			}
 			case IDC_BTN_DELETE:
-				if (pSelf->selection.selected)
-				{
-					switch (pSelf->state)
-					{
-					case sAccounts:
-						deleteFromTable(pSelf->pc, tAccount, ((PAccount)pSelf->accounts->data)[pSelf->selection.row].id);
-						LoadAccounts(pSelf);
-						pSelf->selection.selected = FALSE;
-						break;
-					case sDrivers:
-						deleteFromTable(pSelf->pc, tDriver, ((PDriver)pSelf->drivers->data)[pSelf->selection.row].id);
-						LoadDrivers(pSelf);
-						pSelf->selection.selected = FALSE;
-						break;
-					case sCars:
-						deleteFromTable(pSelf->pc, tCar, ((PCar)pSelf->cars->data)[pSelf->selection.row].id);
-						LoadCars(pSelf);
-						pSelf->selection.selected = FALSE;
-						break;
-					}
-				}
+				onDeleteClick(pSelf);
 				break;
 			case IDC_BTN_EDIT:
-				if (pSelf->selection.selected)
-				{
-					pSelf->selection.selected = FALSE;
-					pSelf->driverID = ((PDriver)pSelf->drivers->data)[pSelf->selection.row].id;
-					pSelf->state = sEditing;
-					LoadTKM(pSelf);
-					ShowWindow(pSelf->hBtnAdd, SW_HIDE);
-					ShowWindow(pSelf->hBtnDelete, SW_HIDE);
-					ShowWindow(pSelf->hBtnEdit, SW_HIDE);
-				}
+				onEditClick(pSelf);
+				break;
 			}
-
 		}
 		if (HIWORD(wParam) == IDC_COMBOBOX && LOWORD(wParam) == CBN_KILLFOCUS)
 		{
@@ -334,9 +353,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 	case WM_LBUTTONDOWN:
 		lmButtonClick(pSelf, lParam);
 		InvalidateRect(hWnd, NULL, TRUE);
-		//ShowEdit(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pSelf->hEdit);
 		break;
-
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
@@ -432,23 +449,6 @@ PWSTR SaveDialog(HWND hWnd)
 		}
 	}
 	return lpszFile;
-}
-
-void PrintError()
-{
-	DWORD dw;
-	LPVOID lpMsgBuf;
-	dw = GetLastError();
-	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,
-		dw,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR)&lpMsgBuf,
-		0, NULL);
-
-	MessageBox(NULL, (LPCTSTR)lpMsgBuf, L"info", MB_OK);
 }
 
 void openDatabase(HWND hWnd)
