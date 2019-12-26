@@ -38,12 +38,12 @@
 
 #define INV_POS 0xFFFFFFFF
 
-const LPWSTR const ADD_TEXT = L"Добавить";
-const LPWSTR const OK_TEXT = L"OK";
-const LPWSTR const CANCEL_TEXT = L"Отмена";
-const LPWSTR const lpszClassName = L"MainWindowClass";
-const LPWSTR const CarLabel = L"Машина";
-const LPWSTR const DateLabel = L"Дата";
+const WCHAR* const ADD_TEXT = L"Добавить";
+const WCHAR* const OK_TEXT = L"OK";
+const WCHAR* const CANCEL_TEXT = L"Отмена";
+const WCHAR* const lpszClassName = L"MainWindowClass";
+const WCHAR* const CarLabel = L"Машина";
+const WCHAR* const DateLabel = L"Дата";
 
 enum state {
 	sEmpty, sDrivers, sAccounts, sCars, sReport, sEditing
@@ -79,14 +79,14 @@ void createDatabase(HWND hWnd);
 PWSTR OpenDialog(HWND hWnd);
 PWSTR SaveDialog(HWND hWnd);
 void onPaint(HWND hWnd);
-void LoadDrivers(PMainWindow pSelf);
-void LoadAccounts(PMainWindow pSelf);
-void LoadCars(PMainWindow pSelf);
-void LoadReport(PMainWindow pSelf);
-void LoadTKM(PMainWindow pSelf);
-void LoadTKMData(PMainWindow pSelf);
-LRESULT Disp(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
-TSelection getSelection(PTable t, int x, int y);
+void loadDrivers(PMainWindow pSelf);
+void loadAccounts(PMainWindow pSelf);
+void loadCars(PMainWindow pSelf);
+void loadReport(PMainWindow pSelf);
+void loadTKM(PMainWindow pSelf);
+void loadTKMData(PMainWindow pSelf);
+LRESULT getStringFromDialog(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
+TSelection getTableSelection(PTable t, int x, int y);
 
 int getIFromCarID(PMainWindow pSelf, int carID);
 void onComboboxDeselect(PMainWindow pSelf, TSelection prevSelection);

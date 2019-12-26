@@ -8,7 +8,7 @@ enum type {
 };
 typedef struct _cell
 {
-	void* data;
+	const void* data;
 	enum type type;
 } TCell ,*PCell;
 
@@ -25,6 +25,6 @@ typedef struct _table
 PTable createTable(int rows, int columns, int x, int y);
 void freeTable(PTable table);
 void setColWidth(PTable table, int column, int width);
-void* getData(PTable TTable, int row, int column);
+const void* getData(PTable TTable, int row, int column);
 enum type getDataType(PTable TTable, int row, int column);
-void setData(PTable TTable, int row, int column, void * data, enum type type);
+void setData(PTable TTable, int row, int column, const void * data, enum type type);

@@ -61,13 +61,12 @@ typedef struct _date
 	int day;
 	wchar_t* date;
 } TDate, *PDate;
-//typedef struct 
 
 PConnection openDB(const wchar_t* filename);
 PConnection createDB(const wchar_t* filename);
 void closeDB(PConnection pc);
 
-void insertDates(PConnection pc);
+void insertDatesIfNotExist(PConnection pc);
 int addDriver(PConnection pc, wchar_t* name);
 int addCar(PConnection pc, wchar_t* number);
 int addWaybill(PConnection pc, int driverID, int dateID, int number, int carID);
@@ -91,7 +90,6 @@ int getTotalSum(PConnection pc);
 void freeData(PArray data);
 
 PArray getTKM(PConnection pc, int dateID, int driverID);
-void freeTKM(PConnection pc, PMatrix tkm);
 
 PWaybill getWaybill(PConnection pc, int driverID, int dayID);
 void freeWaybills(PC);
