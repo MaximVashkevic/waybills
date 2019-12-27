@@ -427,7 +427,6 @@ PCar getCarsArray(PConnection pc, int count)
 					name = (wchar_t*)sqlite3_column_text16(stmtGet, 1);
 					((PCar)(result))[i].id = sqlite3_column_int(stmtGet, 0);
 					((PCar)(result))[i].number = _wcsdup(name);
-					wprintf(L"%s\n", name);
 				}
 				i++;
 			}

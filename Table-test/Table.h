@@ -3,14 +3,15 @@
 #define COL_WIDTH 100
 #define ROW_HEIGTH 25
 #define STRBUF_MAX_SIZE 260
-enum type {
-	tText, tInt, tFloat
+enum type
+{
+	tText, tInt
 };
 typedef struct _cell
 {
 	const void* data;
 	enum type type;
-} TCell ,*PCell;
+} TCell, * PCell;
 
 typedef struct _table
 {
@@ -20,11 +21,11 @@ typedef struct _table
 	int* colWidths;
 	PCell cells;
 	int x, y;
-}TTable, *PTable;
+}TTable, * PTable;
 
 PTable createTable(int rows, int columns, int x, int y);
 void freeTable(PTable table);
 void setColWidth(PTable table, int column, int width);
 const void* getData(PTable TTable, int row, int column);
 enum type getDataType(PTable TTable, int row, int column);
-void setData(PTable TTable, int row, int column, const void * data, enum type type);
+void setData(PTable TTable, int row, int column, const void* data, enum type type);

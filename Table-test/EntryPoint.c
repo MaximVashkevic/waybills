@@ -6,11 +6,6 @@
 #include <malloc.h>
 extern freeAndNULL(void* p);
 
-void ShowEdit(int x, int y, HWND hWnd)
-{
-	SetWindowPos(hWnd, HWND_TOP, x, y, 100, 20, SWP_SHOWWINDOW);
-}
-
 void hideControls(PMainWindow pSelf)
 {
 	ShowWindow(pSelf->hBtnAdd, SW_HIDE);
@@ -20,9 +15,8 @@ void hideControls(PMainWindow pSelf)
 	ShowWindow(pSelf->hEdit, SW_HIDE);
 }
 
-void onOpenClick(PMainWindow pSelf)
+void afterOpen(PMainWindow pSelf)
 {
-	openDatabase(pSelf->hWnd);
 	hideControls(pSelf);
 	pSelf->state = sEmpty;
 	if (pSelf->pc)
@@ -31,25 +25,29 @@ void onOpenClick(PMainWindow pSelf)
 	}
 }
 
+void onOpenClick(PMainWindow pSelf)
+{
+	openDatabase(pSelf->hWnd);
+	afterOpen(pSelf);
+}
+
 void setCombobox(PMainWindow pSelf)
 {
 	int i;
 	loadCars(pSelf);
 	SendMessage(pSelf->hComboBox, (UINT)CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
-	for (i = 0; i < pSelf->cars->count; i++)
+	if (pSelf->cars)
 	{
-		SendMessage(pSelf->hComboBox, (UINT)CB_ADDSTRING, (WPARAM)0, (LPARAM)((PCar)pSelf->cars->data)[i].number);
+		for (i = 0; i < pSelf->cars->count; i++)
+		{
+			SendMessage(pSelf->hComboBox, (UINT)CB_ADDSTRING, (WPARAM)0, (LPARAM)((PCar)pSelf->cars->data)[i].number);
+		}
 	}
 }
 void onCreateClick(PMainWindow pSelf)
 {
 	createDatabase(pSelf->hWnd);
-	hideControls(pSelf);
-	pSelf->state = sEmpty;
-	if (pSelf->pc)
-	{
-		insertDatesIfNotExist(pSelf->pc);
-	}
+	afterOpen(pSelf);
 }
 
 void onDriversClick(PMainWindow pSelf)
@@ -205,7 +203,7 @@ void onComboboxDeselect(PMainWindow pSelf, TSelection prevSelection)
 	ShowWindow(pSelf->hComboBox, SW_HIDE);
 }
 
-void InitializeWindow(PMainWindow pSelf)
+void initializeWindow(PMainWindow pSelf)
 {
 	pSelf->hBtnAdd = CreateWindowEx(0, L"BUTTON", L"Добавить", WS_CHILD | BS_PUSHBUTTON,
 		0, 0, 100, 20, pSelf->hWnd, IDC_BTN_ADD, 0, NULL);
@@ -222,25 +220,25 @@ void InitializeWindow(PMainWindow pSelf)
 
 void onAddClick(PMainWindow pSelf)
 {
-	LPWSTR s = (LPWSTR)getStringFromDialog((HINSTANCE)GetWindowLong(pSelf->hWnd, GWL_HINSTANCE), pSelf->hWnd, L"");
-	if (s)
+	LPWSTR value = (LPWSTR)getStringFromDialog((HINSTANCE)GetWindowLong(pSelf->hWnd, GWL_HINSTANCE), pSelf->hWnd, L"");
+	if (value)
 	{
 		switch (pSelf->state)
 		{
 		case sAccounts:
-			addAccount(pSelf->pc, s);
+			addAccount(pSelf->pc, value);
 			loadAccounts(pSelf);
 			break;
 		case sDrivers:
-			addDriver(pSelf->pc, s);
+			addDriver(pSelf->pc, value);
 			loadDrivers(pSelf);
 			break;
 		case sCars:
-			addCar(pSelf->pc, s);
+			addCar(pSelf->pc, value);
 			loadCars(pSelf);
 			break;
 		}
-		freeAndNULL(&s);
+		freeAndNULL(&value);
 	}
 }
 
@@ -253,19 +251,17 @@ void onDeleteClick(PMainWindow pSelf)
 		case sAccounts:
 			deleteFromTable(pSelf->pc, tAccount, ((PAccount)pSelf->accounts->data)[pSelf->selection.row].id);
 			loadAccounts(pSelf);
-			pSelf->selection.selected = FALSE;
 			break;
 		case sDrivers:
 			deleteFromTable(pSelf->pc, tDriver, ((PDriver)pSelf->drivers->data)[pSelf->selection.row].id);
 			loadDrivers(pSelf);
-			pSelf->selection.selected = FALSE;
 			break;
 		case sCars:
 			deleteFromTable(pSelf->pc, tCar, ((PCar)pSelf->cars->data)[pSelf->selection.row].id);
 			loadCars(pSelf);
-			pSelf->selection.selected = FALSE;
 			break;
 		}
+		pSelf->selection.selected = FALSE;
 	}
 }
 
@@ -277,9 +273,49 @@ void onEditClick(PMainWindow pSelf)
 		pSelf->driverID = ((PDriver)pSelf->drivers->data)[pSelf->selection.row].id;
 		pSelf->state = sEditing;
 		loadTKM(pSelf);
-		ShowWindow(pSelf->hBtnAdd, SW_HIDE);
-		ShowWindow(pSelf->hBtnDelete, SW_HIDE);
-		ShowWindow(pSelf->hBtnEdit, SW_HIDE);
+		hideControls(pSelf);
+	}
+}
+
+void onCommand(PMainWindow pSelf, WPARAM wParam)
+{
+	if (HIWORD(wParam) == BN_CLICKED)
+	{
+		switch (LOWORD(wParam))
+		{
+		case IDC_BTN_ADD:
+		{
+			onAddClick(pSelf);
+			break;
+		}
+		case IDC_BTN_DELETE:
+			onDeleteClick(pSelf);
+			break;
+		case IDC_BTN_EDIT:
+			onEditClick(pSelf);
+			break;
+		}
+	}
+	switch (LOWORD(wParam))
+	{
+	case IDM_OPEN:
+		onOpenClick(pSelf);
+		break;
+	case IDM_CREATE:
+		onCreateClick(pSelf);
+		break;
+	case IDM_DRIVERS:
+		onDriversClick(pSelf);
+		break;
+	case IDM_ACCOUNTS:
+		onAccountsClick(pSelf);
+		break;
+	case IDM_CARS:
+		onCarsClick(pSelf);
+		break;
+	case IDM_REPORT:
+		onReportClick(pSelf);
+		break;
 	}
 }
 
@@ -296,7 +332,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		{
 			pSelf->hWnd = hWnd;
 			SetWindowLong(hWnd, 0, (LONG)pSelf);
-			InitializeWindow(pSelf);
+			initializeWindow(pSelf);
 		}
 		return DefWindowProc(hWnd, uMsg, wParam, lParam);
 	}
@@ -318,44 +354,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 		onPaint(hWnd);
 		break;
 	case WM_COMMAND:
-		if (HIWORD(wParam) == BN_CLICKED)
-		{
-			switch (LOWORD(wParam))
-			{
-			case IDC_BTN_ADD:
-			{
-				onAddClick(pSelf);
-				break;
-			}
-			case IDC_BTN_DELETE:
-				onDeleteClick(pSelf);
-				break;
-			case IDC_BTN_EDIT:
-				onEditClick(pSelf);
-				break;
-			}
-		}
-		switch (LOWORD(wParam))
-		{
-		case IDM_OPEN:
-			onOpenClick(pSelf);
-			break;
-		case IDM_CREATE:
-			onCreateClick(pSelf);
-			break;
-		case IDM_DRIVERS:
-			onDriversClick(pSelf);
-			break;
-		case IDM_ACCOUNTS:
-			onAccountsClick(pSelf);
-			break;
-		case IDM_CARS:
-			onCarsClick(pSelf);
-			break;
-		case IDM_REPORT:
-			onReportClick(pSelf);
-			break;
-		}
+		onCommand(pSelf, wParam);
 		InvalidateRect(pSelf->hWnd, NULL, TRUE);
 		break;
 	case WM_LBUTTONDOWN:
@@ -365,6 +364,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
+
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, INT nCmdShow)
 {
 	WNDCLASSEX wcex;
@@ -419,11 +419,10 @@ PWSTR OpenDialog(HWND hWnd)
 		lpszFile[0] = '\0';
 
 		initOfn(&ofn, hWnd, STR_OPEN_TITLE, lpszFile, OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST);
-		
+
 		if (GetOpenFileName(&ofn) != TRUE)
 		{
 			freeAndNULL(&lpszFile);
-			lpszFile = NULL;
 		}
 	}
 	return lpszFile;
@@ -444,50 +443,39 @@ PWSTR SaveDialog(HWND hWnd)
 		if (GetSaveFileName(&sfn) != TRUE)
 		{
 			freeAndNULL(&lpszFile);
-			lpszFile = NULL;
 		}
 	}
 	return lpszFile;
 }
 
-void openDatabase(HWND hWnd)
+void handleOpenCreate(HWND hWnd, PWSTR(*Dialog)(HWND), PConnection(*DB)(const wchar_t*))
 {
 	PMainWindow pSelf;
 	PWSTR filename;
 	pSelf = (PMainWindow)GetWindowLong(hWnd, 0);
 	if (pSelf)
 	{
-		filename = OpenDialog(hWnd);
+		filename = Dialog(hWnd);
 		if (filename)
 		{
 			if (pSelf->pc)
 			{
 				closeDB(pSelf->pc);
 			}
-			pSelf->pc = openDB(filename);
+			pSelf->pc = DB(filename);
 			freeAndNULL(&filename);
 		}
-	}
+	}	
+}
+
+void openDatabase(HWND hWnd)
+{
+	handleOpenCreate(hWnd, OpenDialog, openDB);
 }
 
 void createDatabase(HWND hWnd)
 {
-	PMainWindow pSelf;
-	PWSTR filename;
-	pSelf = (PMainWindow)GetWindowLong(hWnd, 0);
-	if (pSelf)
-	{
-		filename = SaveDialog(hWnd);
-		if (filename)
-		{
-			if (pSelf->pc)
-			{
-				closeDB(pSelf->pc);
-			}
-			pSelf->pc = createDB(filename);
-			freeAndNULL(&filename);
-		}
-	}
+	handleOpenCreate(hWnd, SaveDialog, createDB);
 }
 
 LPWSTR getTableTextFromInt(PTable table, int row, int col)
@@ -495,17 +483,21 @@ LPWSTR getTableTextFromInt(PTable table, int row, int col)
 	LPWSTR result = calloc(STRBUF_MAX_SIZE, sizeof(WCHAR));
 	if (result)
 	{
-		int n = *((int*)(getData(table, row, col)));
-		StringCbPrintf(result, STRBUF_MAX_SIZE, L"%d", n);
+		StringCbPrintf(result, STRBUF_MAX_SIZE, L"%d", *((int*)(getData(table, row, col))));
 	}
 	return result;
+}
+
+BOOL isCellSelected(PMainWindow pSelf, int row, int col)
+{
+	return pSelf->selection.selected && (row == pSelf->selection.row) && (col == pSelf->selection.col);
 }
 
 void printCell(PMainWindow pSelf, HDC hdc, PTable table, int row, int col, int x, int y)
 {
 	size_t charCount;
 	LPWSTR strBuf = NULL;
-	if (pSelf->selection.selected && (row == pSelf->selection.row) && (col == pSelf->selection.col))
+	if (isCellSelected(pSelf, row, col))
 	{
 		SaveDC(hdc);
 		SetBkColor(hdc, BACK_COLOR);
@@ -518,13 +510,11 @@ void printCell(PMainWindow pSelf, HDC hdc, PTable table, int row, int col, int x
 	case tInt:
 		strBuf = getTableTextFromInt(table, row, col);
 	}
-	if (StringCchLength(strBuf, STRBUF_MAX_SIZE, &charCount) == S_OK) {
-		if (&charCount)
-		{
-			TextOut(hdc, x, y, strBuf, charCount);
-		}
+	if (StringCchLength(strBuf, STRBUF_MAX_SIZE, &charCount) == S_OK)
+	{
+		TextOut(hdc, x, y, strBuf, charCount);
 	}
-	if (pSelf->selection.selected && (row == pSelf->selection.row) && (col == pSelf->selection.col))
+	if (isCellSelected(pSelf, row, col))
 	{
 		RestoreDC(hdc, -1);
 	}
@@ -588,15 +578,19 @@ void loadDrivers(PMainWindow pSelf)
 		freeDrivers(pSelf->drivers);
 	}
 	pSelf->drivers = getDrivers(pSelf->pc);
+
 	if (pSelf->tDrivers)
 	{
 		freeTable(pSelf->tDrivers);
 	}
-	pSelf->tDrivers = createTable(pSelf->drivers->count, 1, 0, DY_TABLE);
-
-	for (int i = 0; i < pSelf->drivers->count; i++)
+	if (pSelf->drivers)
 	{
-		setData(pSelf->tDrivers, i, 0, ((PDriver)pSelf->drivers->data)[i].name, tText);
+		pSelf->tDrivers = createTable(pSelf->drivers->count, 1, 0, DY_TABLE);
+
+		for (int i = 0; i < pSelf->drivers->count; i++)
+		{
+			setData(pSelf->tDrivers, i, 0, ((PDriver)pSelf->drivers->data)[i].name, tText);
+		}
 	}
 }
 
@@ -607,15 +601,19 @@ void loadAccounts(PMainWindow pSelf)
 		freeAccounts(pSelf->accounts);
 	}
 	pSelf->accounts = getAccounts(pSelf->pc);
+
 	if (pSelf->tAccounts)
 	{
 		freeTable(pSelf->tAccounts);
 	}
-	pSelf->tAccounts = createTable(pSelf->accounts->count, 1, 0, DY_TABLE);
-
-	for (int i = 0; i < pSelf->accounts->count; i++)
+	if (pSelf->accounts)
 	{
-		setData(pSelf->tAccounts, i, 0, ((PAccount)pSelf->accounts->data)[i].name, tText);
+		pSelf->tAccounts = createTable(pSelf->accounts->count, 1, 0, DY_TABLE);
+
+		for (int i = 0; i < pSelf->accounts->count; i++)
+		{
+			setData(pSelf->tAccounts, i, 0, ((PAccount)pSelf->accounts->data)[i].name, tText);
+		}
 	}
 }
 
@@ -626,15 +624,19 @@ void loadCars(PMainWindow pSelf)
 		freeCars(pSelf->cars);
 	}
 	pSelf->cars = getCars(pSelf->pc);
+
 	if (pSelf->tCars)
 	{
 		freeTable(pSelf->tCars);
 	}
-	pSelf->tCars = createTable(pSelf->cars->count, 1, 0, DY_TABLE);
-
-	for (int i = 0; i < pSelf->cars->count; i++)
+	if (pSelf->cars)
 	{
-		setData(pSelf->tCars, i, 0, ((PCar)pSelf->cars->data)[i].number, tText);
+		pSelf->tCars = createTable(pSelf->cars->count, 1, 0, DY_TABLE);
+
+		for (int i = 0; i < pSelf->cars->count; i++)
+		{
+			setData(pSelf->tCars, i, 0, ((PCar)pSelf->cars->data)[i].number, tText);
+		}
 	}
 }
 
@@ -653,6 +655,7 @@ void freeSums(PMainWindow pSelf)
 		freeAndNULL(&(pSelf->sums));
 	}
 }
+
 void loadReportInitiate(PMainWindow pSelf)
 {
 	int i;
@@ -662,23 +665,29 @@ void loadReportInitiate(PMainWindow pSelf)
 	{
 		freeTable(pSelf->tReport);
 	}
-	pSelf->tReport = createTable(pSelf->drivers->count + 1, pSelf->accounts->count + 2, 0, 0);
-	setColWidth(pSelf->tReport, 0, 200);
-	for (i = 0; i < pSelf->tDrivers->rowCount; i++)
+	if (pSelf->drivers && pSelf->accounts)
 	{
-		setData(pSelf->tReport, i + 1, 0, getData(pSelf->tDrivers, i, 0), tText);
+		pSelf->tReport = createTable(pSelf->drivers->count + 1, pSelf->accounts->count + 2, 0, 0);
+		setColWidth(pSelf->tReport, 0, 200);
+
+		for (i = 0; i < pSelf->tDrivers->rowCount; i++)
+		{
+			setData(pSelf->tReport, i + 1, 0, getData(pSelf->tDrivers, i, 0), tText);
+		}
+		for (i = 0; i < pSelf->tAccounts->rowCount; i++)
+		{
+			setData(pSelf->tReport, 0, i + 1, getData(pSelf->tAccounts, i, 0), tText);
+		}
+
+		if (pSelf->totals)
+		{
+			freeAndNULL(&(pSelf->totals));
+		}
+		pSelf->totals = (int*)calloc(pSelf->drivers->count + 1, sizeof(int));
+
+		freeSums(pSelf);
+		pSelf->sums = (PMatrix)calloc(1, sizeof(TMatrix));
 	}
-	for (i = 0; i < pSelf->tAccounts->rowCount; i++)
-	{
-		setData(pSelf->tReport, 0, i + 1, getData(pSelf->tAccounts, i, 0), tText);
-	}
-	if (pSelf->totals)
-	{
-		freeAndNULL(&(pSelf->totals));
-	}
-	pSelf->totals = (int*)calloc(pSelf->drivers->count + 1, sizeof(int));
-	freeSums(pSelf);
-	pSelf->sums = (PMatrix)calloc(1, sizeof(TMatrix));
 }
 
 void loadReport(PMainWindow pSelf)
@@ -701,7 +710,7 @@ void loadReport(PMainWindow pSelf)
 					setData(pSelf->tReport, i + 1, j + 1, &(((PDatum)(pSelf->sums->matrix[i]->data))[j].sum), tInt);
 				}
 				pSelf->totals[i] = getTotalSumByDriver(pSelf->pc, ((PDriver)pSelf->drivers->data)[i].id);
-				setData(pSelf->tReport, i + 1, pSelf->tReport->colCount - 1, &(pSelf->totals[i]), tInt);
+				//setData(pSelf->tReport, i + 1, pSelf->tReport->colCount - 1, &(pSelf->totals[i]), tInt);
 			}
 		}
 	}

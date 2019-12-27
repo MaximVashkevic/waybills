@@ -4,12 +4,12 @@
 #include "Table.h"
 
 #define STRBUF_MAX_SIZE 260
+
 #define IDC_BTN_ADD	(HMENU)100
 #define IDC_BTN_DELETE (HMENU)101
 #define IDC_BTN_EDIT	(HMENU)102
 #define IDC_EDIT	(HMENU)103
 #define IDC_COMBOBOX (HMENU)104
-#define ID_TEXT 200
 
 #define BACK_COLOR RGB(173, 216, 230)
 
@@ -45,6 +45,10 @@ const WCHAR* const lpszClassName = L"MainWindowClass";
 const WCHAR* const CarLabel = L"Машина";
 const WCHAR* const DateLabel = L"Дата";
 
+const WCHAR* const STR_SAVE_TITLE = L"Сохранить как";
+const WCHAR* const STR_OPEN_TITLE = L"Открыть";
+const WCHAR* const STR_FILTER = L"All\0*.*\0Файл базы данных\0*.dbf\0";
+
 enum state {
 	sEmpty, sDrivers, sAccounts, sCars, sReport, sEditing
 };
@@ -52,7 +56,7 @@ typedef struct _tselection
 {
 	int row, col;
 	BOOL selected;
-} TSelection, *PSelection;
+} TSelection, * PSelection;
 typedef struct _TMainWindow
 {
 	HWND hWnd;
@@ -71,13 +75,15 @@ typedef struct _TMainWindow
 	int driverID;
 } TMainWindow, * PMainWindow;
 
-const WCHAR* const STR_SAVE_TITLE = L"Сохранить как";
-const WCHAR* const STR_OPEN_TITLE = L"Открыть";
-const WCHAR* const STR_FILTER = L"All\0*.*\0Файл базы данных\0*.dbf\0";
 void openDatabase(HWND hWnd);
 void createDatabase(HWND hWnd);
+LPWSTR getTableTextFromInt(PTable table, int row, int col);
+BOOL isCellSelected(PMainWindow pSelf, int row, int col);
+void printCell(PMainWindow pSelf, HDC hdc, PTable table, int row, int col, int x, int y);
+void PrintTable(PMainWindow pSelf, HDC hdc, PTable table);
 PWSTR OpenDialog(HWND hWnd);
 PWSTR SaveDialog(HWND hWnd);
+void handleOpenCreate(HWND hWnd, PWSTR(*Dialog)(HWND), PConnection(*DB)(const wchar_t*));
 void onPaint(HWND hWnd);
 void loadDrivers(PMainWindow pSelf);
 void loadAccounts(PMainWindow pSelf);
@@ -89,4 +95,33 @@ LRESULT getStringFromDialog(HINSTANCE hInstance, HWND hWnd, LPWSTR lpszMessage);
 TSelection getTableSelection(PTable t, int x, int y);
 
 int getIFromCarID(PMainWindow pSelf, int carID);
+int getIFromAccountID(PMainWindow pSelf, int accountID);
 void onComboboxDeselect(PMainWindow pSelf, TSelection prevSelection);
+
+void initializeWindow(PMainWindow pSelf);
+
+void onAddClick(PMainWindow pSelf);
+void onDeleteClick(PMainWindow pSelf);
+void onEditClick(PMainWindow pSelf);
+
+void onCommand(PMainWindow pSelf, WPARAM wParam);
+
+void hideControls(PMainWindow pSelf);
+
+void initOfn(OPENFILENAME* ofn, HWND hWnd, LPCWSTR title, LPWSTR resBuffer, DWORD flags);
+void afterOpen(PMainWindow pSelf);
+void onOpenClick(PMainWindow pSelf);
+
+void setCombobox(PMainWindow pSelf);
+
+void onCreateClick(PMainWindow pSelf);
+void onDriversClick(PMainWindow pSelf);
+void onAccountsClick(PMainWindow pSelf);
+void onCarsClick(PMainWindow pSelf);
+void onReportClick(PMainWindow pSelf);
+
+void onEditDeselect(PMainWindow pSelf, TSelection prevSelection);
+void onClickEditing(PMainWindow pSelf, LPARAM lParam);
+void onLMButtonClick(PMainWindow pSelf, LPARAM lParam);
+
+
