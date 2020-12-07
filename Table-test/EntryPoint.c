@@ -411,15 +411,11 @@ void initOfn(OPENFILENAME* ofn, HWND hWnd, LPCWSTR title, LPWSTR resBuffer, DWOR
 PWSTR OpenDialog(HWND hWnd)
 {
 	OPENFILENAMEW ofn;
-	PWSTR lpszFile;
-
-	lpszFile = (PWSTR)malloc(STRBUF_MAX_SIZE * sizeof(WCHAR));
+	PWSTR lpszFile = (PWSTR)malloc(STRBUF_MAX_SIZE * sizeof(WCHAR));
 	if (lpszFile)
 	{
 		lpszFile[0] = '\0';
-
 		initOfn(&ofn, hWnd, STR_OPEN_TITLE, lpszFile, OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST);
-
 		if (GetOpenFileName(&ofn) != TRUE)
 		{
 			freeAndNULL(&lpszFile);
